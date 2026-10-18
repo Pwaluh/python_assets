@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <g transform="translate(-2,0)">
+  <!-- ombre -->
+  <ellipse cx="92" cy="104" rx="60" ry="22" fill="#000" opacity="0.22"/>
+  <!-- patins -->
+  <rect x="62" y="68" width="62" height="5" rx="2.5" fill="#2e2e2e"/>
+  <rect x="62" y="119" width="62" height="5" rx="2.5" fill="#2e2e2e"/>
+  <rect x="76" y="70" width="3" height="52" fill="#2e2e2e"/>
+  <rect x="106" y="70" width="3" height="52" fill="#2e2e2e"/>
+  <!-- poutre de queue -->
+  <path d="M60 90 L14 93 L14 99 L60 102 Z" fill="#4c5c3a" stroke="#1a1a1a" stroke-width="2"/>
+  <!-- empennage horizontal -->
+  <rect x="22" y="82" width="8" height="28" rx="2" fill="#4c5c3a" stroke="#1a1a1a" stroke-width="2"/>
+  <!-- rotor de queue -->
+  <rect x="9" y="84" width="4" height="24" rx="2" fill="#555" stroke="#1a1a1a" stroke-width="1.5"/>
+  <circle cx="11" cy="96" r="3" fill="#333"/>
+  <!-- ailerons avec pods d'armes -->
+  <rect x="84" y="60" width="14" height="72" rx="3" fill="#4c5c3a" stroke="#1a1a1a" stroke-width="2"/>
+  <rect x="82" y="56" width="22" height="8" rx="4" fill="#333" stroke="#111" stroke-width="1.5"/>
+  <rect x="82" y="128" width="22" height="8" rx="4" fill="#333" stroke="#111" stroke-width="1.5"/>
+  <!-- fuselage -->
+  <path d="M56 96 C56 80 72 76 98 76 C130 76 156 84 164 96 C156 108 130 116 98 116 C72 116 56 112 56 96 Z"
+        fill="#5c6e45" stroke="#1a1a1a" stroke-width="2.5"/>
+  <!-- bande de reflet -->
+  <path d="M70 88 C90 82 120 82 146 88" fill="none" stroke="#7a8f5c" stroke-width="4" stroke-linecap="round"/>
+  <!-- moteurs -->
+  <rect x="70" y="86" width="22" height="8" rx="3" fill="#3f4d2f" stroke="#1a1a1a" stroke-width="1.5"/>
+  <rect x="70" y="98" width="22" height="8" rx="3" fill="#3f4d2f" stroke="#1a1a1a" stroke-width="1.5"/>
+  <!-- cockpit -->
+  <path d="M118 86 C134 86 150 90 158 96 C150 102 134 106 118 106 C112 102 112 90 118 86 Z"
+        fill="#7fb6cf" stroke="#1a1a1a" stroke-width="2"/>
+  <path d="M136 88 L132 104" stroke="#1a1a1a" stroke-width="1.5"/>
+  <path d="M122 90 C130 89 140 90 148 93" fill="none" stroke="#d6f1ff" stroke-width="2.5" stroke-linecap="round" opacity="0.8"/>
+  <!-- canon de nez -->
+  <circle cx="164" cy="96" r="5" fill="#333" stroke="#111" stroke-width="1.5"/>
+  <rect x="166" y="94" width="14" height="4" fill="#222"/>
+  <!-- moyeu du rotor (repère) -->
+  <circle cx="98" cy="96" r="6" fill="#333" stroke="#111" stroke-width="1.5"/>
+  </g>
+</svg>
