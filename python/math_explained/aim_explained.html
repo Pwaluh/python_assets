@@ -48,6 +48,15 @@ body {
   background-position: -1px -1px;
 }
 .wrap { max-width: 1180px; margin: 0 auto; }
+@media (min-width: 1400px) { .wrap { max-width: 1400px; } }
+@media (min-width: 901px) {
+  body { padding-block: 20px; }
+  body header { max-width: none; display: flex; flex-wrap: wrap; align-items: flex-end; column-gap: 56px; row-gap: 6px; margin-bottom: 22px; }
+  body header .eyebrow { flex: 1 0 100%; }
+  body header h1 { flex: none; font-size: 60px; }
+  body header .lede { flex: 1 1 420px; max-width: 640px; min-width: 0; padding-bottom: 4px; }
+  body .lede { font-size: 17px; line-height: 1.5; }
+}
 
 header { display: grid; gap: 8px; margin-bottom: 28px; max-width: 62ch; }
 .eyebrow { font-family: var(--f-mono); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
@@ -84,7 +93,28 @@ h1 .o { color: var(--signal); }
 .btn:focus-visible, .opt:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
 
 /* --- étapes --- */
-.steps { display: grid; gap: 44px; }
+.steps-col { display: grid; gap: 20px; min-width: 0; }
+.steps { display: grid; min-width: 0; align-content: start; }
+.step.enter { animation: enter .35s ease-out; }
+@keyframes enter { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
+.stepnav { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; background: var(--panel); border: 2px solid var(--ink); border-radius: 6px; min-height: 70px; padding: 8px 10px; }
+.stepnav .pick { font-family: var(--f-display); font-size: 20px; width: 40px; height: 40px; border: 2px solid var(--ink); border-radius: 6px; background: var(--paper); color: var(--ink); cursor: pointer; display: grid; place-items: center; }
+.stepnav .pick:hover { background: var(--grid); }
+.stepnav .pick[aria-current="step"] { background: var(--signal); color: var(--paper); box-shadow: 3px 3px 0 var(--ink); }
+.stepnav .pick:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
+.stepnav .grow { display: none; }
+.stepnav { justify-content: space-between; }
+.stepnav .arrow { width: 40px; height: 40px; padding: 0; font-size: 20px; display: grid; place-items: center; }
+.step[hidden] { display: none; }
+.stepnav .btn:disabled { opacity: .4; cursor: default; }
+@media (min-width: 901px) {
+  .layout { align-items: stretch; }
+  .stage-col { position: static; display: flex; flex-direction: column; }
+  .readout { margin-top: auto; }
+  .steps-col { contain: size; display: flex; flex-direction: column; gap: 12px; }
+  .steps { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 8px; }
+  .stepnav { flex: none; }
+}
 .step { display: grid; gap: 12px; }
 .step-head { display: flex; align-items: baseline; gap: 14px; }
 .num { font-family: var(--f-display); font-size: 44px; line-height: 1; color: var(--signal); min-width: 1.2ch; }
@@ -191,7 +221,7 @@ footer { margin-top: 56px; font-size: 14px; color: var(--muted); max-width: 62ch
           <g font-family="var(--f-mono)" font-weight="600" font-size="15">
             <g id="tdxG"><rect id="tdxBg" rx="4" fill="var(--paper)" stroke="var(--dx)" stroke-width="1.5"/><text id="tdx" fill="var(--dx)" text-anchor="middle" dominant-baseline="central"></text></g>
             <g id="tdyG"><rect id="tdyBg" rx="4" fill="var(--paper)" stroke="var(--dy)" stroke-width="1.5"/><text id="tdy" fill="var(--dy)" text-anchor="middle" dominant-baseline="central"></text></g>
-            <text id="tang" fill="var(--signal)" text-anchor="middle" dominant-baseline="central" font-size="16"></text>
+            <g id="tangG"><rect id="tangBg" rx="4" fill="var(--paper)" stroke="var(--signal)" stroke-width="1.5"/><text id="tang" fill="var(--signal)" text-anchor="middle" dominant-baseline="central" font-size="16"></text></g>
           </g>
 
           <g id="zombieG"><use href="#zombie" x="-30" y="-30" width="60" height="60"/></g>
@@ -209,7 +239,8 @@ footer { margin-top: 56px; font-size: 14px; color: var(--muted); max-width: 62ch
       </div>
     </div>
 
-    <div class="steps">
+    <div class="steps-col">
+    <div class="steps" id="steps">
       <section class="step">
         <div class="step-head"><span class="num">1</span><h2>Mesurer le chemin</h2></div>
         <p>Le soldat est au centre. On compte combien de cases il faut faire <span class="dxw">vers la droite</span> et <span class="dyw">vers le haut</span> pour arriver au zombie. Si le zombie est à gauche ou en bas, le nombre devient <b>négatif</b>.</p>
@@ -222,10 +253,10 @@ footer { margin-top: 56px; font-size: 14px; color: var(--muted); max-width: 62ch
 
       <section class="step">
         <div class="step-head"><span class="num">2</span><h2>Voir le triangle</h2></div>
-        <p>Sur le terrain, les deux flèches <span class="dxw">bleue</span> et <span class="dyw">rose</span> forment un triangle avec la ligne pointillée qui va droit vers le zombie. Cette ligne est penchée comme une rampe. L'angle de la rampe, c'est <span class="aw">l'angle dont le soldat doit tourner</span>.</p>
-        <p>Plus la flèche rose est grande par rapport à la bleue, plus la rampe est raide.</p>
+        <p>Sur le terrain, les deux flèches <span class="dxw">bleue</span> et <span class="dyw">rose</span> forment un <b>triangle rectangle</b> avec la ligne pointillée qui va droit vers le zombie. Cette ligne monte comme une rampe. L'angle entre la rampe et l'axe horizontal, c'est <span class="aw">l'angle dont le soldat doit tourner</span>.</p>
+        <p>Plus la flèche rose est grande par rapport à la bleue, plus la <b>pente</b> est forte.</p>
         <div class="card formula">
-          <span>raideur = dy ÷ dx = <span class="res" id="slope">0</span></span>
+          <span>pente = dy ÷ dx = <span class="res" id="slope">0</span></span>
         </div>
       </section>
 
@@ -262,9 +293,9 @@ footer { margin-top: 56px; font-size: 14px; color: var(--muted); max-width: 62ch
 
       <section class="step">
         <div class="step-head"><span class="num">4</span><h2>Pourquoi atan2 et pas atan ?</h2></div>
-        <p>La raideur seule ne suffit pas. Regarde ces deux zombies : l'un est à <b>3 à droite, 4 en haut</b>, l'autre à <b>3 à gauche, 4 en bas</b>. La raideur est la même (4 ÷ 3 et −4 ÷ −3 donnent tous les deux 1,33), mais ils sont dans des directions opposées.</p>
+        <p>La pente seule ne suffit pas. Regarde ces deux zombies : l'un est à <b>3 à droite, 4 en haut</b>, l'autre à <b>3 à gauche, 4 en bas</b>. La pente est la même (4 ÷ 3 et −4 ÷ −3 donnent tous les deux 1,33), mais ils sont dans des directions opposées.</p>
         <div class="card">
-          <svg viewBox="-150 -110 300 220" role="img" aria-label="Deux zombies avec la même raideur mais dans des directions opposées" style="width:100%;max-width:340px;height:auto;display:block;margin:0 auto">
+          <svg viewBox="-150 -110 300 220" role="img" aria-label="Deux zombies avec la même pente mais dans des directions opposées" style="width:100%;max-width:260px;height:auto;display:block;margin:0 auto">
             <line x1="-150" y1="0" x2="150" y2="0" stroke="var(--muted)" opacity=".5"/>
             <line x1="0" y1="-110" x2="0" y2="110" stroke="var(--muted)" opacity=".5"/>
             <line x1="0" y1="0" x2="54" y2="-72" stroke="var(--signal)" stroke-width="3" stroke-dasharray="6 5"/>
@@ -276,12 +307,12 @@ footer { margin-top: 56px; font-size: 14px; color: var(--muted); max-width: 62ch
             <text x="-140" y="98" font-family="var(--f-mono)" font-size="13" font-weight="600" fill="var(--dy)">−127°</text>
           </svg>
         </div>
-        <p><span class="mono">atan</span> ne reçoit que la division : elle répondrait <b>53° pour les deux</b> et le soldat tirerait dans le dos du deuxième zombie. <span class="mono">atan2</span> reçoit les deux nombres séparément, donc elle voit les signes et sait de quel côté regarder.</p>
+        <p><span class="mono">atan</span> (l'<b>arc tangente</b>, la fonction qui transforme une pente en angle) ne reçoit que la division : elle répondrait <b>53° pour les deux</b> et le soldat tirerait dans le dos du deuxième zombie. <span class="mono">atan2</span> reçoit les deux nombres séparément, donc elle voit les signes et sait de quel côté regarder.</p>
       </section>
 
       <section class="step">
         <div class="step-head"><span class="num">5</span><h2>Radians → degrés</h2></div>
-        <p>La machine répond en <b>radians</b>, l'unité préférée des ordinateurs. Un tour complet fait 360° mais seulement 6,28 radians. Pour revenir en degrés, on utilise <span class="mono">math.degrees()</span>. Il multiplie par 57,3, car 1 radian ≈ 57,3°.</p>
+        <p>La machine répond en <b>radians</b>, l'unité préférée des ordinateurs. Un tour complet fait 360° mais seulement 6,28 radians (c'est 2×π). Pour revenir en degrés, on utilise <span class="mono">math.degrees()</span>. Il multiplie par 57,3, car 1 radian ≈ 57,3°.</p>
         <div class="card ruler">
           <svg viewBox="0 0 520 150" role="img" aria-label="Deux règles : radians de 0 à 6,28 et degrés de 0 à 360">
             <g font-family="var(--f-mono)" font-size="12" fill="var(--muted)">
@@ -308,6 +339,7 @@ footer { margin-top: 56px; font-size: 14px; color: var(--muted); max-width: 62ch
         <div class="step-head"><span class="num">6</span><h2>Dans Codesters</h2></div>
         <p>Les sprites regardent vers la droite au départ, comme l'angle 0° de la machine. On peut donc donner l'angle directement à <span class="mono">set_rotation</span>. Les commentaires en jaune suivent le zombie du terrain.</p>
         <pre class="code" id="code"></pre>
+        <p class="say">Sur le terrain, une case vaut 1. Dans Codesters, les distances sont en pixels, mais l'angle obtenu est le même : seule la direction compte, pas la taille du triangle.</p>
       </section>
 
       <section class="step">
@@ -334,9 +366,15 @@ footer { margin-top: 56px; font-size: 14px; color: var(--muted); max-width: 62ch
         </div>
       </section>
     </div>
+    <nav class="stepnav" id="stepnav" aria-label="Étapes">
+      <button class="btn arrow" id="prevStep" type="button" aria-label="Étape précédente" title="Précédent">←</button>
+      <span id="picks" style="display:flex;gap:6px;flex-wrap:wrap"></span>
+      <span class="grow"></span>
+      <button class="btn arrow" id="nextStep" type="button" aria-label="Étape suivante" title="Suivant">→</button>
+    </nav>
+    </div>
   </div>
 
-  <footer>Sur le terrain, une case vaut 1. Dans Codesters, les distances sont en pixels, mais l'angle obtenu est exactement le même : seule la direction compte, pas la taille du triangle.</footer>
 </div>
 
 <script>
@@ -368,11 +406,45 @@ footer { margin-top: 56px; font-size: 14px; color: var(--muted); max-width: 62ch
   const path = [[6,4],[0,5],[-7,3],[-5,-4],[2,-5],[8,-2],[9,0],[3,3]];
   let pi = 0;
 
-  function place(sel, x, y, txt) {
+  function place(sel, x, y, txt, w, h) {
     const tx = $(sel), bg = $(sel + 'Bg');
     tx.textContent = txt; tx.setAttribute('x', x); tx.setAttribute('y', y);
-    const w = 14 + txt.length * 9.2;
-    bg.setAttribute('x', x - w/2); bg.setAttribute('y', y - 12); bg.setAttribute('width', w); bg.setAttribute('height', 24);
+    bg.setAttribute('x', x - w/2); bg.setAttribute('y', y - h/2); bg.setAttribute('width', w); bg.setAttribute('height', h);
+  }
+
+  // placement des étiquettes : on essaie des positions candidates et on garde la première qui ne touche rien
+  const mk = (x, y, w, h) => ({ x: x - w/2, y: y - h/2, w, h, cx: x, cy: y });
+  const hit = (a, b, pad = 5) => a.x < b.x + b.w + pad && b.x < a.x + a.w + pad && a.y < b.y + b.h + pad && b.y < a.y + a.h + pad;
+  const inside = b => b.x > -294 && b.x + b.w < 294 && b.y > -174 && b.y + b.h < 174;
+  function choose(cands, w, h, obstacles) {
+    let best = null, bestScore = Infinity;
+    cands.forEach((c, i) => {
+      const b = mk(c[0], c[1], w, h);
+      const score = obstacles.filter(o => hit(b, o)).length * 1000 + (inside(b) ? 0 : 500) + i;
+      if (score < bestScore) { bestScore = score; best = b; }
+    });
+    return best;
+  }
+  function layoutLabels(a) {
+    const X = dx * S, Y = -dy * S;
+    const obs = [mk(0, 0, 58, 58), mk(X, Y, 54, 54)];
+    const side = dy >= 0 ? 1 : -1, sx = dx >= 0 ? 1 : -1;
+    if (dx !== 0) {
+      const t = 'dx = ' + fi(dx), w = 14 + t.length * 9.2;
+      const b = choose([[X/2, 18*side], [X*.3, 18*side], [X*.7, 18*side], [X/2, -18*side], [X*.3, -18*side], [X*.7, -18*side]], w, 24, obs);
+      place('tdx', b.cx, b.cy, t, w, 24); obs.push(b);
+    }
+    if (dy !== 0) {
+      const t = 'dy = ' + fi(dy), w = 14 + t.length * 9.2, off = w/2 + 10;
+      const b = choose([[X + sx*off, Y/2], [X + sx*off, Y*.3], [X + sx*off, Y*.7], [X - sx*off, Y/2], [X - sx*off, Y*.3], [X - sx*off, Y*.7]], w, 24, obs);
+      place('tdy', b.cx, b.cy, t, w, 24); obs.push(b);
+    }
+    const t = fr(a) + '°', w = 16 + t.length * 9.8, c = [];
+    for (const r of [88, 112, 138, 166]) for (const o of [0, -14, 14, -28, 28, -45, 45]) {
+      const m = (a / 2 + o) * Math.PI / 180; c.push([r * Math.cos(m), -r * Math.sin(m)]);
+    }
+    const b = choose(c, w, 26, obs);
+    place('tang', b.cx, b.cy, t, w, 26);
   }
 
   function arcPath(a, r) {
@@ -391,10 +463,7 @@ footer { margin-top: 56px; font-size: 14px; color: var(--muted); max-width: 62ch
     $('ldy').setAttribute('y2', Y + Math.sign(dy) * 4 || 0);
     $('ldy').style.display = dy === 0 ? 'none' : '';
     $('hyp').setAttribute('x2', X); $('hyp').setAttribute('y2', Y);
-    place('tdx', X / 2, dy >= 0 ? 18 : -18, 'dx = ' + fi(dx));
     $('tdxG').style.display = dx === 0 ? 'none' : '';
-    const lx = X + (dx >= 0 ? 42 : -42);
-    place('tdy', Math.max(-250, Math.min(250, lx)), Y / 2, 'dy = ' + fi(dy));
     $('tdyG').style.display = dy === 0 ? 'none' : '';
     $('zombieG').setAttribute('transform', `translate(${X} ${Y}) rotate(${-deg(-dy, -dx)})`);
 
@@ -433,9 +502,7 @@ player.<span class="fn">set_rotation</span>(degrees)`;
     $('soldierG').setAttribute('transform', `rotate(${-a})`);
     const [p, f] = arcPath(a, 52);
     $('arc').setAttribute('d', p); $('arcFill').setAttribute('d', f);
-    const m = a / 2 * Math.PI / 180;
-    $('tang').setAttribute('x', 86 * Math.cos(m)); $('tang').setAttribute('y', -86 * Math.sin(m));
-    $('tang').textContent = fr(a) + '°';
+    layoutLabels(a);
   }
 
   function setTarget(nx, ny) {
@@ -497,7 +564,47 @@ player.<span class="fn">set_rotation</span>(degrees)`;
   });
   $('qnext').addEventListener('click', nextQ);
 
-  updateStatic(); drawAngle(shown); nextQ(); requestAnimationFrame(tick);
+  // une étape à la fois
+  const steps = [...document.querySelectorAll('#steps .step')];
+  let cur = 0;
+  $('picks').innerHTML = steps.map((s, i) => `<button class="pick" type="button" data-i="${i}" aria-label="Étape ${s.querySelector('.num').textContent}">${s.querySelector('.num').textContent}</button>`).join('');
+  function showStep(i, anim = true) {
+    cur = Math.max(0, Math.min(steps.length - 1, i));
+    steps.forEach((s, k) => { s.hidden = k !== cur; s.classList.remove('enter'); });
+    if (anim && !reduce) { void steps[cur].offsetWidth; steps[cur].classList.add('enter'); }
+    $('picks').querySelectorAll('.pick').forEach((b, k) => { if (k === cur) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current'); });
+    $('prevStep').disabled = cur === 0;
+    $('nextStep').disabled = cur === steps.length - 1;
+  }
+  $('picks').addEventListener('click', e => { const b = e.target.closest('.pick'); if (b) showStep(+b.dataset.i); });
+  $('prevStep').addEventListener('click', () => showStep(cur - 1));
+  $('nextStep').addEventListener('click', () => showStep(cur + 1));
+  document.addEventListener('keydown', e => {
+    if (e.target.closest('input, textarea')) return;
+    if (e.key === 'ArrowRight') showStep(cur + 1);
+    if (e.key === 'ArrowLeft') showStep(cur - 1);
+  });
+  showStep(0, false);
+
+  // la colonne de gauche prend au moins la hauteur de l'étape la plus longue : pas de défilement à droite
+  const deskMQ = window.matchMedia('(min-width: 901px)');
+  function fitHeight() {
+    const col = document.querySelector('.stage-col');
+    col.style.minHeight = '';
+    if (!deskMQ.matches) return;
+    const box = $('steps'); let max = 0;
+    steps.forEach((s, k) => {
+      steps.forEach((o, j) => o.hidden = j !== k);
+      max = Math.max(max, box.scrollHeight);
+    });
+    steps.forEach((o, j) => o.hidden = j !== cur);
+    col.style.minHeight = Math.ceil(max + 12 + $('stepnav').offsetHeight) + 'px';
+  }
+  fitHeight();
+  window.addEventListener('resize', fitHeight);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitHeight);
+
+  updateStatic(); drawAngle(shown); nextQ(); fitHeight(); requestAnimationFrame(tick);
   if (reduce) { auto = false; $('autoBtn').textContent = 'Balade auto'; }
 })();
 </script>
