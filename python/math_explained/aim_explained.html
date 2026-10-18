@@ -1,0 +1,505 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Viser un zombie</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Lexend:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout : carnet quadrillé de maths + terrain de jeu. Desktop = terrain collant à gauche, étapes à droite ; mobile = une colonne. */
+:root {
+  --paper: #eef0e4;
+  --panel: #e3e7d4;
+  --grid: #cfd6bd;
+  --ink: #1d2619;
+  --muted: #5a6450;
+  --grass: #4f7a3a;
+  --signal: #cf6a1f;   /* l'angle */
+  --dx: #2c68aa;       /* vers la droite */
+  --dy: #a8336e;       /* vers le haut */
+  --code-bg: #1d2619;
+  --code-fg: #e6ecd9;
+  --f-display: "Black Ops One", "Impact", "Arial Black", sans-serif;
+  --f-body: "Lexend", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "Consolas", monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #121810; --panel: #1b2318; --grid: #29331f; --ink: #e6ecd9; --muted: #9aa58c;
+  --grass: #84b263; --signal: #f29a4a; --dx: #74aae8; --dy: #e584b8; --code-bg: #0b0f0a; --code-fg: #e6ecd9;
+  color-scheme: dark } }
+:root[data-theme="dark"] {
+  --paper: #121810; --panel: #1b2318; --grid: #29331f; --ink: #e6ecd9; --muted: #9aa58c;
+  --grass: #84b263; --signal: #f29a4a; --dx: #74aae8; --dy: #e584b8; --code-bg: #0b0f0a; --code-fg: #e6ecd9;
+  color-scheme: dark }
+
+* { box-sizing: border-box; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 17px;
+  line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 64px;
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-position: -1px -1px;
+}
+.wrap { max-width: 1180px; margin: 0 auto; }
+
+header { display: grid; gap: 8px; margin-bottom: 28px; max-width: 62ch; }
+.eyebrow { font-family: var(--f-mono); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(38px, 7vw, 68px); line-height: 1; margin: 0; letter-spacing: .01em; text-wrap: balance; }
+h1 .o { color: var(--signal); }
+.lede { margin: 0; font-size: 19px; color: var(--muted); }
+.lede b { color: var(--ink); }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 36px; align-items: start; }
+@media (max-width: 900px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+/* --- terrain --- */
+.stage-col { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); display: grid; gap: 12px; }
+@media (max-width: 900px) { .stage-col { position: static; } }
+.stage {
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+  box-shadow: 6px 6px 0 var(--ink);
+  overflow: hidden;
+  touch-action: none;
+  max-width: 100%;
+}
+.stage svg { display: block; width: 100%; height: auto; cursor: crosshair; user-select: none; }
+.hint { font-size: 14px; color: var(--muted); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.hint kbd { font-family: var(--f-mono); font-size: 12px; border: 1px solid var(--muted); border-radius: 4px; padding: 0 6px; }
+.readout { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.chip { background: var(--panel); border: 2px solid var(--ink); border-radius: 6px; padding: 8px 12px; display: grid; gap: 0; }
+.chip .k { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.chip .v { font-family: var(--f-mono); font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.c-dx .v { color: var(--dx); } .c-dy .v { color: var(--dy); } .c-a .v { color: var(--signal); }
+.btn { font: inherit; font-size: 14px; font-weight: 500; background: var(--panel); color: var(--ink); border: 2px solid var(--ink); border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+.btn:hover { background: var(--grid); }
+.btn:focus-visible, .opt:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
+
+/* --- étapes --- */
+.steps { display: grid; gap: 44px; }
+.step { display: grid; gap: 12px; }
+.step-head { display: flex; align-items: baseline; gap: 14px; }
+.num { font-family: var(--f-display); font-size: 44px; line-height: 1; color: var(--signal); min-width: 1.2ch; }
+h2 { font-family: var(--f-display); font-weight: 400; font-size: 27px; line-height: 1.15; margin: 0; letter-spacing: .01em; text-wrap: balance; }
+.step p { margin: 0; max-width: 62ch; }
+.dxw { color: var(--dx); font-weight: 700; } .dyw { color: var(--dy); font-weight: 700; } .aw { color: var(--signal); font-weight: 700; }
+.card { background: var(--panel); border: 2px solid var(--ink); border-radius: 6px; padding: 16px; min-width: 0; }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.formula { font-family: var(--f-mono); font-size: 16px; display: grid; gap: 4px; overflow-x: auto; }
+.formula .res { font-weight: 600; }
+.say { font-style: italic; color: var(--muted); }
+
+/* machine */
+.machine svg { width: 100%; height: auto; display: block; }
+.belt { stroke-dasharray: 6 8; animation: belt 1s linear infinite; }
+@keyframes belt { to { stroke-dashoffset: -14; } }
+.gear { transform-box: fill-box; transform-origin: center; animation: spin 3s linear infinite; }
+.gear.r { animation-direction: reverse; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.feed { animation: feed 2.4s ease-in-out infinite; }
+@keyframes feed { 0% { transform: translateX(-26px); opacity: 0; } 25% { opacity: 1; } 55% { transform: translateX(0); opacity: 1; } 80%,100% { transform: translateX(0); opacity: 1; } }
+.out { animation: out 2.4s ease-in-out infinite; }
+@keyframes out { 0%, 45% { transform: translateX(-30px); opacity: 0; } 70%, 100% { transform: translateX(0); opacity: 1; } }
+
+/* règles radians/degrés */
+.ruler svg { width: 100%; height: auto; display: block; }
+
+/* code */
+pre.code { margin: 0; background: var(--code-bg); color: var(--code-fg); border-radius: 6px; padding: 16px 18px; font-family: var(--f-mono); font-size: 14.5px; line-height: 1.7; overflow-x: auto; border: 2px solid var(--ink); }
+.code .kw { color: #f29a4a; } .code .fn { color: #9fd47a; } .code .cm { color: #8e9a82; } .code .lv { color: #ffd76b; font-weight: 600; }
+
+/* défi */
+.quiz-grid { display: grid; grid-template-columns: minmax(0, 220px) minmax(0, 1fr); gap: 16px; align-items: center; }
+@media (max-width: 520px) { .quiz-grid { grid-template-columns: minmax(0, 1fr); } }
+.quiz-grid svg { width: 100%; max-width: 220px; height: auto; display: block; margin: 0 auto; border: 2px solid var(--ink); border-radius: 6px; background: var(--paper); }
+.opts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.opt { font-family: var(--f-mono); font-size: 18px; font-weight: 600; padding: 10px; border: 2px solid var(--ink); border-radius: 6px; background: var(--paper); color: var(--ink); cursor: pointer; font-variant-numeric: tabular-nums; }
+.opt:hover:not(:disabled) { background: var(--grid); }
+.opt.ok { background: var(--grass); color: var(--paper); }
+.opt.ko { text-decoration: line-through; opacity: .55; }
+.feedback { min-height: 1.6em; margin-top: 10px; font-weight: 500; }
+.score { font-size: 14px; color: var(--muted); }
+
+footer { margin-top: 56px; font-size: 14px; color: var(--muted); max-width: 62ch; }
+
+@media (prefers-reduced-motion: reduce) {
+  .belt, .gear, .feed, .out { animation: none; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Atelier Python · Codesters · trigonométrie de jeu</span>
+    <h1>Viser un <span class="o">zombie</span></h1>
+    <p class="lede">Comment le soldat sait-il <b>de combien tourner</b> pour regarder le zombie ? Avec deux nombres, une machine qui s'appelle <b>atan2</b>, et un petit changement d'unité.</p>
+  </header>
+
+  <div class="layout">
+    <div class="stage-col">
+      <div class="stage" id="stageBox">
+        <svg id="stage" viewBox="-300 -180 600 360" aria-label="Terrain : le soldat au centre vise le zombie" role="img">
+          <defs>
+            <symbol id="soldat" viewBox="0 0 64 64">
+              <ellipse cx="30" cy="34" rx="15" ry="17" fill="#000" opacity="0.22"/>
+              <rect x="12" y="23" width="10" height="18" rx="3" fill="#3a5a2a" stroke="#1a1a1a" stroke-width="1.5"/>
+              <ellipse cx="28" cy="32" rx="10" ry="15" fill="#4f7a3a" stroke="#1a1a1a" stroke-width="1.5"/>
+              <path d="M30 42 L40 38 L44 35" fill="none" stroke="#3a5a2a" stroke-width="6" stroke-linecap="round"/>
+              <rect x="34" y="31" width="26" height="4" rx="1" fill="#2b2b2b" stroke="#111" stroke-width="1"/>
+              <rect x="36" y="33" width="5" height="6" rx="1" fill="#2b2b2b" stroke="#111" stroke-width="1"/>
+              <path d="M30 22 L40 27 L48 31" fill="none" stroke="#4f7a3a" stroke-width="6" stroke-linecap="round"/>
+              <circle cx="44" cy="35" r="3" fill="#e0b48a" stroke="#1a1a1a" stroke-width="1"/>
+              <circle cx="48" cy="31" r="3" fill="#e0b48a" stroke="#1a1a1a" stroke-width="1"/>
+              <circle cx="30" cy="32" r="8.5" fill="#5d8a45" stroke="#1a1a1a" stroke-width="1.5"/>
+              <circle cx="28" cy="30" r="4" fill="#3e6230" opacity="0.5"/>
+            </symbol>
+            <symbol id="zombie" viewBox="0 0 64 64">
+              <ellipse cx="30" cy="34" rx="15" ry="17" fill="#000" opacity="0.22"/>
+              <path d="M30 22 L50 24" stroke="#1a1a1a" stroke-width="8" stroke-linecap="round"/>
+              <path d="M30 42 L50 39" stroke="#1a1a1a" stroke-width="8" stroke-linecap="round"/>
+              <path d="M30 22 L50 24" stroke="#8fae6b" stroke-width="5.5" stroke-linecap="round"/>
+              <path d="M30 42 L50 39" stroke="#8fae6b" stroke-width="5.5" stroke-linecap="round"/>
+              <path d="M20 22 C17 30 17 36 20 44 L26 47 L34 45 L36 32 L34 19 L26 17 Z" fill="#5a6f8a" stroke="#1a1a1a" stroke-width="1.5"/>
+              <circle cx="31" cy="22" r="4.5" fill="#3f4f66" stroke="#1a1a1a" stroke-width="1.2"/>
+              <circle cx="31" cy="42" r="4.5" fill="#3f4f66" stroke="#1a1a1a" stroke-width="1.2"/>
+              <circle cx="31" cy="32" r="8" fill="#8fae6b" stroke="#1a1a1a" stroke-width="1.5"/>
+              <path d="M24 29 C25 24 30 23 33 25 C30 27 28 30 27 35 C25 34 24 32 24 29 Z" fill="#3b3326" opacity="0.9"/>
+              <circle cx="35" cy="34" r="2" fill="#5f7a45"/>
+            </symbol>
+            <marker id="mdx" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="var(--dx)"/></marker>
+            <marker id="mdy" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="var(--dy)"/></marker>
+          </defs>
+          <g id="gridLayer"></g>
+          <line x1="-300" y1="0" x2="300" y2="0" stroke="var(--muted)" stroke-width="1.5" opacity=".6"/>
+          <line x1="0" y1="-180" x2="0" y2="180" stroke="var(--muted)" stroke-width="1.5" opacity=".6"/>
+          <text x="288" y="-6" text-anchor="end" font-family="var(--f-mono)" font-size="12" fill="var(--muted)">x (droite)</text>
+          <text x="6" y="-166" font-family="var(--f-mono)" font-size="12" fill="var(--muted)">y (haut)</text>
+
+          <line id="hyp" x1="0" y1="0" x2="0" y2="0" stroke="var(--ink)" stroke-width="2" stroke-dasharray="6 6" opacity=".7"/>
+          <line id="ldx" x1="0" y1="0" x2="0" y2="0" stroke="var(--dx)" stroke-width="5" stroke-linecap="round" marker-end="url(#mdx)"/>
+          <line id="ldy" x1="0" y1="0" x2="0" y2="0" stroke="var(--dy)" stroke-width="5" stroke-linecap="round" marker-end="url(#mdy)"/>
+          <path id="arc" d="" fill="none" stroke="var(--signal)" stroke-width="4"/>
+          <path id="arcFill" d="" fill="var(--signal)" opacity=".18"/>
+
+          <g font-family="var(--f-mono)" font-weight="600" font-size="15">
+            <g id="tdxG"><rect id="tdxBg" rx="4" fill="var(--paper)" stroke="var(--dx)" stroke-width="1.5"/><text id="tdx" fill="var(--dx)" text-anchor="middle" dominant-baseline="central"></text></g>
+            <g id="tdyG"><rect id="tdyBg" rx="4" fill="var(--paper)" stroke="var(--dy)" stroke-width="1.5"/><text id="tdy" fill="var(--dy)" text-anchor="middle" dominant-baseline="central"></text></g>
+            <text id="tang" fill="var(--signal)" text-anchor="middle" dominant-baseline="central" font-size="16"></text>
+          </g>
+
+          <g id="zombieG"><use href="#zombie" x="-30" y="-30" width="60" height="60"/></g>
+          <g id="soldierG"><use href="#soldat" x="-34" y="-34" width="68" height="68"/></g>
+        </svg>
+      </div>
+      <div class="hint">
+        <span>Clique ou fais glisser sur le terrain pour placer le zombie. Une case = 1.</span>
+        <button class="btn" id="autoBtn" type="button">Pause</button>
+      </div>
+      <div class="readout">
+        <div class="chip c-dx"><span class="k">Droite (dx)</span><span class="v" id="vdx">0</span></div>
+        <div class="chip c-dy"><span class="k">Haut (dy)</span><span class="v" id="vdy">0</span></div>
+        <div class="chip c-a"><span class="k">Angle</span><span class="v" id="vang">0°</span></div>
+      </div>
+    </div>
+
+    <div class="steps">
+      <section class="step">
+        <div class="step-head"><span class="num">1</span><h2>Mesurer le chemin</h2></div>
+        <p>Le soldat est au centre. On compte combien de cases il faut faire <span class="dxw">vers la droite</span> et <span class="dyw">vers le haut</span> pour arriver au zombie. Si le zombie est à gauche ou en bas, le nombre devient <b>négatif</b>.</p>
+        <div class="card formula">
+          <span>dx = x_zombie − x_soldat = <span class="res dxw" id="f1dx">0</span></span>
+          <span>dy = y_zombie − y_soldat = <span class="res dyw" id="f1dy">0</span></span>
+        </div>
+        <p class="say" id="sentence">« Le zombie est à 0 cases à droite et 0 cases en haut. »</p>
+      </section>
+
+      <section class="step">
+        <div class="step-head"><span class="num">2</span><h2>Voir le triangle</h2></div>
+        <p>Sur le terrain, les deux flèches <span class="dxw">bleue</span> et <span class="dyw">rose</span> forment un triangle avec la ligne pointillée qui va droit vers le zombie. Cette ligne est penchée comme une rampe. L'angle de la rampe, c'est <span class="aw">l'angle dont le soldat doit tourner</span>.</p>
+        <p>Plus la flèche rose est grande par rapport à la bleue, plus la rampe est raide.</p>
+        <div class="card formula">
+          <span>raideur = dy ÷ dx = <span class="res" id="slope">0</span></span>
+        </div>
+      </section>
+
+      <section class="step">
+        <div class="step-head"><span class="num">3</span><h2>La machine atan2</h2></div>
+        <p>On ne calcule pas l'angle à la main. Python a une machine pour ça : <span class="mono">math.atan2</span>. On lui donne <span class="dyw">le haut</span> en premier, puis <span class="dxw">la droite</span>, et elle répond avec l'angle.</p>
+        <div class="card machine">
+          <svg viewBox="0 0 520 170" role="img" aria-label="La machine atan2 reçoit dy et dx et donne l'angle">
+            <line class="belt" x1="20" y1="58" x2="190" y2="58" stroke="var(--dy)" stroke-width="3"/>
+            <line class="belt" x1="20" y1="112" x2="190" y2="112" stroke="var(--dx)" stroke-width="3"/>
+            <line class="belt" x1="330" y1="85" x2="500" y2="85" stroke="var(--signal)" stroke-width="3"/>
+            <g class="feed">
+              <rect x="70" y="38" width="96" height="40" rx="6" fill="var(--paper)" stroke="var(--dy)" stroke-width="2.5"/>
+              <text x="118" y="59" text-anchor="middle" dominant-baseline="central" font-family="var(--f-mono)" font-weight="600" font-size="17" fill="var(--dy)" id="mdyv">dy</text>
+              <rect x="70" y="92" width="96" height="40" rx="6" fill="var(--paper)" stroke="var(--dx)" stroke-width="2.5"/>
+              <text x="118" y="113" text-anchor="middle" dominant-baseline="central" font-family="var(--f-mono)" font-weight="600" font-size="17" fill="var(--dx)" id="mdxv">dx</text>
+            </g>
+            <text x="20" y="28" font-family="var(--f-body)" font-size="13" fill="var(--muted)">1. le haut</text>
+            <text x="20" y="152" font-family="var(--f-body)" font-size="13" fill="var(--muted)">2. la droite</text>
+            <rect x="190" y="22" width="140" height="126" rx="10" fill="var(--ink)"/>
+            <text x="260" y="44" text-anchor="middle" font-family="var(--f-display)" font-size="20" fill="var(--paper)">ATAN2</text>
+            <g fill="none" stroke="var(--paper)" stroke-width="3">
+              <g class="gear"><circle cx="236" cy="96" r="22"/><path d="M236 70 V122 M210 96 H262 M218 78 L254 114 M254 78 L218 114"/></g>
+              <g class="gear r"><circle cx="290" cy="106" r="16"/><path d="M290 86 V126 M270 106 H310 M276 92 L304 120 M304 92 L276 120"/></g>
+            </g>
+            <g class="out">
+              <rect x="372" y="62" width="120" height="46" rx="6" fill="var(--signal)"/>
+              <text x="432" y="86" text-anchor="middle" dominant-baseline="central" font-family="var(--f-mono)" font-weight="600" font-size="19" fill="var(--paper)" id="mout">0°</text>
+            </g>
+          </svg>
+        </div>
+        <p>Essaie les cas faciles sur le terrain : zombie pile <b>à droite</b> → 0°, pile <b>en haut</b> → 90°, pile <b>à gauche</b> → 180°, pile <b>en bas</b> → −90°.</p>
+      </section>
+
+      <section class="step">
+        <div class="step-head"><span class="num">4</span><h2>Pourquoi atan2 et pas atan ?</h2></div>
+        <p>La raideur seule ne suffit pas. Regarde ces deux zombies : l'un est à <b>3 à droite, 4 en haut</b>, l'autre à <b>3 à gauche, 4 en bas</b>. La raideur est la même (4 ÷ 3 et −4 ÷ −3 donnent tous les deux 1,33), mais ils sont dans des directions opposées.</p>
+        <div class="card">
+          <svg viewBox="-150 -110 300 220" role="img" aria-label="Deux zombies avec la même raideur mais dans des directions opposées" style="width:100%;max-width:340px;height:auto;display:block;margin:0 auto">
+            <line x1="-150" y1="0" x2="150" y2="0" stroke="var(--muted)" opacity=".5"/>
+            <line x1="0" y1="-110" x2="0" y2="110" stroke="var(--muted)" opacity=".5"/>
+            <line x1="0" y1="0" x2="54" y2="-72" stroke="var(--signal)" stroke-width="3" stroke-dasharray="6 5"/>
+            <line x1="0" y1="0" x2="-54" y2="72" stroke="var(--dy)" stroke-width="3" stroke-dasharray="6 5"/>
+            <use href="#zombie" x="34" y="-92" width="40" height="40" transform="rotate(127 54 -72)"/>
+            <use href="#zombie" x="-74" y="52" width="40" height="40" transform="rotate(-53 -54 72)"/>
+            <use href="#soldat" x="-22" y="-22" width="44" height="44"/>
+            <text x="68" y="-76" font-family="var(--f-mono)" font-size="13" font-weight="600" fill="var(--signal)">53°</text>
+            <text x="-140" y="98" font-family="var(--f-mono)" font-size="13" font-weight="600" fill="var(--dy)">−127°</text>
+          </svg>
+        </div>
+        <p><span class="mono">atan</span> ne reçoit que la division : elle répondrait <b>53° pour les deux</b> et le soldat tirerait dans le dos du deuxième zombie. <span class="mono">atan2</span> reçoit les deux nombres séparément, donc elle voit les signes et sait de quel côté regarder.</p>
+      </section>
+
+      <section class="step">
+        <div class="step-head"><span class="num">5</span><h2>Radians → degrés</h2></div>
+        <p>La machine répond en <b>radians</b>, l'unité préférée des ordinateurs. Un tour complet fait 360° mais seulement 6,28 radians. Pour revenir en degrés, on utilise <span class="mono">math.degrees()</span>. Il multiplie par 57,3, car 1 radian ≈ 57,3°.</p>
+        <div class="card ruler">
+          <svg viewBox="0 0 520 150" role="img" aria-label="Deux règles : radians de 0 à 6,28 et degrés de 0 à 360">
+            <g font-family="var(--f-mono)" font-size="12" fill="var(--muted)">
+              <text x="20" y="22">radians</text>
+              <text x="20" y="104">degrés</text>
+            </g>
+            <line x1="20" y1="44" x2="500" y2="44" stroke="var(--ink)" stroke-width="2"/>
+            <line x1="20" y1="126" x2="500" y2="126" stroke="var(--ink)" stroke-width="2"/>
+            <g id="ticks"></g>
+            <line id="rlink" x1="0" y1="44" x2="0" y2="126" stroke="var(--signal)" stroke-width="2" stroke-dasharray="4 4"/>
+            <circle id="rdot1" cx="0" cy="44" r="7" fill="var(--signal)"/>
+            <circle id="rdot2" cx="0" cy="126" r="7" fill="var(--signal)"/>
+            <g font-family="var(--f-mono)" font-weight="600" font-size="15" fill="var(--signal)">
+              <text id="rlab1" x="0" y="72" text-anchor="middle"></text>
+              <text id="rlab2" x="0" y="100" text-anchor="middle"></text>
+            </g>
+          </svg>
+        </div>
+        <p class="formula"><span><span id="radv">0,00</span> rad × 57,3 = <span class="aw" id="degv">0°</span></span></p>
+        <p>Si l'angle est négatif, par exemple −90°, ça veut juste dire « tourner dans l'autre sens ». −90° et 270° pointent au même endroit, et la règle les montre au même endroit.</p>
+      </section>
+
+      <section class="step">
+        <div class="step-head"><span class="num">6</span><h2>Dans Codesters</h2></div>
+        <p>Les sprites regardent vers la droite au départ, comme l'angle 0° de la machine. On peut donc donner l'angle directement à <span class="mono">set_rotation</span>. Les commentaires en jaune suivent le zombie du terrain.</p>
+        <pre class="code" id="code"></pre>
+      </section>
+
+      <section class="step">
+        <div class="step-head"><span class="num">★</span><h2>Défi : devine l'angle</h2></div>
+        <p>Un zombie apparaît. De combien le soldat doit-il tourner ? Réfléchis avant de cliquer.</p>
+        <div class="card">
+          <div class="quiz-grid">
+            <svg id="qsvg" viewBox="-110 -110 220 220" role="img" aria-label="Défi : un zombie autour du soldat">
+              <line x1="-110" y1="0" x2="110" y2="0" stroke="var(--muted)" opacity=".45"/>
+              <line x1="0" y1="-110" x2="0" y2="110" stroke="var(--muted)" opacity=".45"/>
+              <g id="qz"><use href="#zombie" x="-20" y="-20" width="40" height="40"/></g>
+              <g id="qs"><use href="#soldat" x="-24" y="-24" width="48" height="48"/></g>
+            </svg>
+            <div>
+              <p class="mono" id="qpos" style="margin:0 0 10px">dx = 0, dy = 0</p>
+              <div class="opts" id="opts"></div>
+              <p class="feedback" id="qfb" aria-live="polite"></p>
+              <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+                <button class="btn" id="qnext" type="button">Zombie suivant</button>
+                <span class="score" id="qscore">Score : 0 / 0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <footer>Sur le terrain, une case vaut 1. Dans Codesters, les distances sont en pixels, mais l'angle obtenu est exactement le même : seule la direction compte, pas la taille du triangle.</footer>
+</div>
+
+<script>
+(() => {
+  const S = 24, MAXX = 11, MAXY = 6;
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const $ = id => document.getElementById(id);
+  const fr = (n, d = 1) => n.toFixed(d).replace('.', ',').replace(/^-/, '−');
+  const fi = n => String(n).replace(/^-/, '−');
+  const deg = (dy, dx) => Math.atan2(dy, dx) * 180 / Math.PI;
+
+  // grille
+  let g = '';
+  for (let x = -12; x <= 12; x++) g += `<line x1="${x*S}" y1="-180" x2="${x*S}" y2="180" stroke="var(--grid)" stroke-width="1"/>`;
+  for (let y = -7; y <= 7; y++) g += `<line x1="-300" y1="${y*S}" x2="300" y2="${y*S}" stroke="var(--grid)" stroke-width="1"/>`;
+  $('gridLayer').innerHTML = g;
+
+  // règles
+  let t = '';
+  const rx = v => 20 + v * 480;
+  for (let i = 0; i <= 6; i++) { const x = rx(i / (2*Math.PI)); t += `<line x1="${x}" y1="38" x2="${x}" y2="50" stroke="var(--ink)" stroke-width="2"/><text x="${x}" y="34" text-anchor="middle" font-family="var(--f-mono)" font-size="11" fill="var(--muted)" dy="-8">${i}</text>`; }
+  t += `<line x1="500" y1="36" x2="500" y2="52" stroke="var(--ink)" stroke-width="2"/><text x="500" y="18" text-anchor="end" font-family="var(--f-mono)" font-size="11" fill="var(--muted)">6,28</text>`;
+  for (let d = 0; d <= 360; d += 45) { const x = rx(d/360); t += `<line x1="${x}" y1="120" x2="${x}" y2="132" stroke="var(--ink)" stroke-width="2"/><text x="${x}" y="146" text-anchor="middle" font-family="var(--f-mono)" font-size="11" fill="var(--muted)">${d}</text>`; }
+  $('ticks').innerHTML = t;
+
+  let dx = 6, dy = 4;            // cible
+  let shown = deg(dy, dx);       // angle affiché (animé)
+  let auto = true;
+  const path = [[6,4],[0,5],[-7,3],[-5,-4],[2,-5],[8,-2],[9,0],[3,3]];
+  let pi = 0;
+
+  function place(sel, x, y, txt) {
+    const tx = $(sel), bg = $(sel + 'Bg');
+    tx.textContent = txt; tx.setAttribute('x', x); tx.setAttribute('y', y);
+    const w = 14 + txt.length * 9.2;
+    bg.setAttribute('x', x - w/2); bg.setAttribute('y', y - 12); bg.setAttribute('width', w); bg.setAttribute('height', 24);
+  }
+
+  function arcPath(a, r) {
+    const rad = a * Math.PI / 180;
+    const ex = r * Math.cos(rad), ey = -r * Math.sin(rad);
+    const sweep = a >= 0 ? 0 : 1;
+    const large = Math.abs(a) > 180 ? 1 : 0;
+    return [`M ${r} 0 A ${r} ${r} 0 ${large} ${sweep} ${ex.toFixed(2)} ${ey.toFixed(2)}`, `M 0 0 L ${r} 0 A ${r} ${r} 0 ${large} ${sweep} ${ex.toFixed(2)} ${ey.toFixed(2)} Z`];
+  }
+
+  function updateStatic() {
+    const X = dx * S, Y = -dy * S;
+    $('ldx').setAttribute('x2', X - Math.sign(dx) * 4 || 0);
+    $('ldx').style.display = dx === 0 ? 'none' : '';
+    $('ldy').setAttribute('x1', X); $('ldy').setAttribute('x2', X);
+    $('ldy').setAttribute('y2', Y + Math.sign(dy) * 4 || 0);
+    $('ldy').style.display = dy === 0 ? 'none' : '';
+    $('hyp').setAttribute('x2', X); $('hyp').setAttribute('y2', Y);
+    place('tdx', X / 2, dy >= 0 ? 18 : -18, 'dx = ' + fi(dx));
+    $('tdxG').style.display = dx === 0 ? 'none' : '';
+    const lx = X + (dx >= 0 ? 42 : -42);
+    place('tdy', Math.max(-250, Math.min(250, lx)), Y / 2, 'dy = ' + fi(dy));
+    $('tdyG').style.display = dy === 0 ? 'none' : '';
+    $('zombieG').setAttribute('transform', `translate(${X} ${Y}) rotate(${-deg(-dy, -dx)})`);
+
+    const a = deg(dy, dx);
+    const rad = Math.atan2(dy, dx);
+    $('vdx').textContent = fi(dx); $('vdy').textContent = fi(dy); $('vang').textContent = fr(a) + '°';
+    $('f1dx').textContent = fi(dx); $('f1dy').textContent = fi(dy);
+    $('sentence').textContent = `« Le zombie est à ${Math.abs(dx)} case${Math.abs(dx)>1?'s':''} ${dx < 0 ? 'à gauche' : 'à droite'} et ${Math.abs(dy)} case${Math.abs(dy)>1?'s':''} ${dy < 0 ? 'en bas' : 'en haut'}. »`;
+    $('slope').textContent = dx === 0 ? 'impossible (division par 0), mais atan2 s\'en sort quand même !' : fr(dy / dx, 2);
+    $('mdyv').textContent = 'dy = ' + fi(dy); $('mdxv').textContent = 'dx = ' + fi(dx);
+    $('mout').textContent = fr(a) + '°';
+    $('radv').textContent = fr(rad, 2); $('degv').textContent = fr(a) + '°';
+
+    const n = (a + 360) % 360, x = rx(n / 360);
+    ['rdot1','rdot2'].forEach(id => $(id).setAttribute('cx', x));
+    $('rlink').setAttribute('x1', x); $('rlink').setAttribute('x2', x);
+    const lxr = Math.max(60, Math.min(460, x));
+    $('rlab1').setAttribute('x', lxr); $('rlab1').textContent = fr(n * Math.PI / 180, 2) + ' rad';
+    $('rlab2').setAttribute('x', lxr); $('rlab2').textContent = fr(n) + '°';
+
+    $('code').innerHTML =
+`<span class="kw">import</span> math
+
+<span class="kw">def</span> <span class="fn">rotate_character</span>(x_dest, y_dest, x, y):
+    dx = x_dest - x                  <span class="cm"># droite :</span> <span class="lv">${fi(dx)}</span>
+    dy = y_dest - y                  <span class="cm"># haut   :</span> <span class="lv">${fi(dy)}</span>
+    angle = math.<span class="fn">atan2</span>(dy, dx)       <span class="cm"># radians :</span> <span class="lv">${fr(rad, 2)}</span>
+    <span class="kw">return</span> math.<span class="fn">degrees</span>(angle)     <span class="cm"># degrés  :</span> <span class="lv">${fr(a)}</span>
+
+degrees = <span class="fn">rotate_character</span>(zombie.get_x(), zombie.get_y(),
+                           player.get_x(), player.get_y())
+player.<span class="fn">set_rotation</span>(degrees)`;
+  }
+
+  function drawAngle(a) {
+    $('soldierG').setAttribute('transform', `rotate(${-a})`);
+    const [p, f] = arcPath(a, 52);
+    $('arc').setAttribute('d', p); $('arcFill').setAttribute('d', f);
+    const m = a / 2 * Math.PI / 180;
+    $('tang').setAttribute('x', 86 * Math.cos(m)); $('tang').setAttribute('y', -86 * Math.sin(m));
+    $('tang').textContent = fr(a) + '°';
+  }
+
+  function setTarget(nx, ny) {
+    nx = Math.max(-MAXX, Math.min(MAXX, nx)); ny = Math.max(-MAXY, Math.min(MAXY, ny));
+    if (nx === 0 && ny === 0) nx = 1;
+    if (nx === dx && ny === dy) return;
+    dx = nx; dy = ny; updateStatic();
+  }
+
+  function tick() {
+    const target = deg(dy, dx);
+    let diff = target - shown;
+    if (reduce || Math.abs(diff) < 0.05) shown = target;
+    else shown += diff * 0.14;
+    drawAngle(shown);
+    requestAnimationFrame(tick);
+  }
+
+  // interaction
+  const svg = $('stage');
+  function toCell(e) {
+    const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+    const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+    return [Math.round(p.x / S), Math.round(-p.y / S)];
+  }
+  let dragging = false;
+  function stopAuto() { auto = false; $('autoBtn').textContent = 'Balade auto'; }
+  svg.addEventListener('pointerdown', e => { dragging = true; svg.setPointerCapture(e.pointerId); stopAuto(); setTarget(...toCell(e)); });
+  svg.addEventListener('pointermove', e => { if (dragging) setTarget(...toCell(e)); });
+  svg.addEventListener('pointerup', () => dragging = false);
+  svg.addEventListener('pointercancel', () => dragging = false);
+  $('autoBtn').addEventListener('click', () => { auto = !auto; $('autoBtn').textContent = auto ? 'Pause' : 'Balade auto'; });
+  setInterval(() => { if (auto && !reduce) { pi = (pi + 1) % path.length; setTarget(...path[pi]); } }, 1900);
+
+  // défi
+  const Q = [[5,0,0],[0,4,90],[-5,0,180],[0,-4,-90],[3,3,45],[-3,3,135],[-3,-3,-135],[3,-3,-45]];
+  const pool = [0, 45, 90, 135, 180, -45, -90, -135];
+  let q = null, score = 0, total = 0, answered = false, last = -1;
+  function nextQ() {
+    let i; do { i = Math.floor(Math.random() * Q.length); } while (i === last); last = i;
+    q = Q[i]; answered = false;
+    $('qz').setAttribute('transform', `translate(${q[0]*16} ${-q[1]*16}) rotate(${-deg(-q[1], -q[0])})`);
+    $('qs').setAttribute('transform', 'rotate(0)');
+    $('qpos').textContent = `dx = ${fi(q[0])}, dy = ${fi(q[1])}`;
+    const wrong = pool.filter(v => v !== q[2]).sort(() => Math.random() - .5).slice(0, 3);
+    const opts = [q[2], ...wrong].sort(() => Math.random() - .5);
+    $('opts').innerHTML = opts.map(v => `<button class="opt" type="button" data-v="${v}">${fi(v)}°</button>`).join('');
+    $('qfb').textContent = '';
+  }
+  $('opts').addEventListener('click', e => {
+    const b = e.target.closest('.opt'); if (!b || answered) return;
+    answered = true; total++;
+    const v = +b.dataset.v, ok = v === q[2];
+    if (ok) score++;
+    $('opts').querySelectorAll('.opt').forEach(o => { o.disabled = true; if (+o.dataset.v === q[2]) o.classList.add('ok'); else if (o === b) o.classList.add('ko'); });
+    $('qs').setAttribute('transform', `rotate(${-q[2]})`);
+    $('qfb').textContent = ok ? 'Bien vu, le soldat vise juste !' : `Pas tout à fait : atan2(${fi(q[1])}, ${fi(q[0])}) donne ${fi(q[2])}°.`;
+    $('qscore').textContent = `Score : ${score} / ${total}`;
+  });
+  $('qnext').addEventListener('click', nextQ);
+
+  updateStatic(); drawAngle(shown); nextQ(); requestAnimationFrame(tick);
+  if (reduce) { auto = false; $('autoBtn').textContent = 'Balade auto'; }
+})();
+</script>
+
+</body></html>
