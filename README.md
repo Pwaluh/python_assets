@@ -34,3 +34,4 @@ Des pages interactives à ouvrir dans le navigateur pour expliquer le jeu aux é
 
 - `aim_explained.html` : **Viser un zombie** – comment `atan2` donne l'angle pour que le soldat regarde la cible.
 - `world_scrolling_explained.html` : **La carte qui glisse** – pourquoi l'hélico, les zombies et les balles doivent bouger en même temps que la map.
+- `muzzle_explained.html` : **Le bout du canon** – comment `cos` et `sin` font partir la balle du bout du fusil, quel que soit l'angle.

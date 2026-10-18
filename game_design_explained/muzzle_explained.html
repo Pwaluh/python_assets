@@ -1,0 +1,506 @@
+<title>Le bout du canon</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Lexend:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout : même carnet quadrillé que les deux autres pages. Gauche = soldat zoomé qui tire, droite = étapes une à une. */
+:root {
+  --paper: #eef0e4;
+  --panel: #e3e7d4;
+  --grid: #cfd6bd;
+  --ink: #1d2619;
+  --muted: #5a6450;
+  --grass: #4f7a3a;
+  --signal: #cf6a1f;   /* le bout du canon */
+  --dx: #2c68aa;       /* cos : vers la droite */
+  --dy: #a8336e;       /* sin : vers le haut */
+  --bug: #c0352b;
+  --code-bg: #1d2619;
+  --code-fg: #e6ecd9;
+  --f-display: "Black Ops One", "Impact", "Arial Black", sans-serif;
+  --f-body: "Lexend", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "Consolas", monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #121810; --panel: #1b2318; --grid: #29331f; --ink: #e6ecd9; --muted: #9aa58c;
+  --grass: #84b263; --signal: #f29a4a; --dx: #74aae8; --dy: #e584b8; --bug: #ef6f63; --code-bg: #0b0f0a; --code-fg: #e6ecd9;
+  color-scheme: dark } }
+:root[data-theme="dark"] {
+  --paper: #121810; --panel: #1b2318; --grid: #29331f; --ink: #e6ecd9; --muted: #9aa58c;
+  --grass: #84b263; --signal: #f29a4a; --dx: #74aae8; --dy: #e584b8; --bug: #ef6f63; --code-bg: #0b0f0a; --code-fg: #e6ecd9;
+  color-scheme: dark }
+
+* { box-sizing: border-box; }
+body {
+  background: var(--paper); color: var(--ink);
+  font-family: var(--f-body); font-size: 17px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 48px;
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 24px 24px; background-position: -1px -1px;
+}
+.wrap { max-width: 1180px; margin: 0 auto; }
+@media (min-width: 1400px) { .wrap { max-width: 1400px; } }
+
+header { display: grid; gap: 8px; margin-bottom: 24px; max-width: 62ch; }
+.eyebrow { font-family: var(--f-mono); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(36px, 7vw, 60px); line-height: 1; margin: 0; letter-spacing: .01em; text-wrap: balance; }
+h1 .o { color: var(--signal); }
+.lede { margin: 0; font-size: 18px; color: var(--muted); }
+.lede b { color: var(--ink); }
+@media (min-width: 901px) {
+  body { padding-block: 20px; }
+  body header { max-width: none; display: flex; flex-wrap: wrap; align-items: flex-end; column-gap: 56px; row-gap: 6px; margin-bottom: 22px; }
+  body header .eyebrow { flex: 1 0 100%; }
+  body header h1 { flex: none; }
+  body header .lede { flex: 1 1 420px; max-width: 640px; min-width: 0; padding-bottom: 4px; font-size: 17px; line-height: 1.5; }
+}
+
+.layout { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 36px; align-items: start; }
+@media (max-width: 900px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+/* --- terrain --- */
+.stage-col { display: grid; gap: 12px; min-width: 0; }
+.stage { background: var(--paper); border: 2px solid var(--ink); border-radius: 6px; box-shadow: 6px 6px 0 var(--ink); overflow: hidden; touch-action: none; max-width: 100%; position: relative; }
+.stage svg { display: block; width: 100%; height: auto; cursor: crosshair; user-select: none; }
+.zoom { position: absolute; top: 8px; right: 10px; font-family: var(--f-mono); font-size: 12px; color: var(--muted); background: var(--paper); border: 1px solid var(--grid); border-radius: 4px; padding: 0 6px; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.seg { display: inline-flex; border: 2px solid var(--ink); border-radius: 6px; overflow: hidden; }
+.seg button { font: inherit; font-size: 14px; font-weight: 500; padding: 6px 12px; border: 0; border-right: 2px solid var(--ink); background: var(--paper); color: var(--ink); cursor: pointer; }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.seg button:focus-visible, .btn:focus-visible, .opt:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
+.btn { font: inherit; font-size: 14px; font-weight: 500; background: var(--panel); color: var(--ink); border: 2px solid var(--ink); border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+.btn:hover { background: var(--grid); }
+.hint { font-size: 14px; color: var(--muted); margin: 0; }
+.readout { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.chip { background: var(--panel); border: 2px solid var(--ink); border-radius: 6px; padding: 8px 12px; display: grid; align-content: center; min-width: 0; min-height: 70px; }
+.chip .k { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chip .v { font-family: var(--f-mono); font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.25; white-space: nowrap; }
+.c-a .v { color: var(--signal); } .c-x .v { color: var(--dx); } .c-y .v { color: var(--dy); }
+
+/* --- étapes --- */
+.steps-col { display: grid; gap: 20px; min-width: 0; }
+.steps { display: grid; min-width: 0; align-content: start; }
+.step { display: grid; gap: 12px; align-content: start; }
+.step[hidden] { display: none; }
+.step.enter { animation: enter .35s ease-out; }
+@keyframes enter { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
+.step-head { display: flex; align-items: baseline; gap: 14px; }
+.num { font-family: var(--f-display); font-size: 44px; line-height: 1; color: var(--signal); min-width: 1.2ch; }
+h2 { font-family: var(--f-display); font-weight: 400; font-size: 27px; line-height: 1.15; margin: 0; text-wrap: balance; }
+.step p { margin: 0; max-width: 62ch; }
+.xw { color: var(--dx); font-weight: 700; } .yw { color: var(--dy); font-weight: 700; } .aw { color: var(--signal); font-weight: 700; } .bw { color: var(--bug); font-weight: 700; }
+.card { background: var(--panel); border: 2px solid var(--ink); border-radius: 6px; padding: 14px 16px; min-width: 0; }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.formula { font-family: var(--f-mono); font-size: 16px; display: grid; gap: 4px; overflow-x: auto; font-variant-numeric: tabular-nums; }
+.say { font-style: italic; color: var(--muted); }
+.tbl-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--grid); }
+th { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 500; }
+td.m { font-family: var(--f-mono); font-weight: 600; white-space: nowrap; }
+td.ok { color: var(--grass); } td.ko { color: var(--bug); }
+pre.code { margin: 0; background: var(--code-bg); color: var(--code-fg); border-radius: 6px; padding: 14px 16px; font-family: var(--f-mono); font-size: 13.5px; line-height: 1.65; overflow-x: auto; border: 2px solid var(--ink); }
+.code .kw { color: #f29a4a; } .code .fn { color: #9fd47a; } .code .cm { color: #8e9a82; } .code .lv { color: #ffd76b; font-weight: 600; }
+
+.stepnav { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: space-between; background: var(--panel); border: 2px solid var(--ink); border-radius: 6px; min-height: 70px; padding: 8px 10px; }
+.stepnav .pick { font-family: var(--f-display); font-size: 20px; width: 40px; height: 40px; border: 2px solid var(--ink); border-radius: 6px; background: var(--paper); color: var(--ink); cursor: pointer; display: grid; place-items: center; }
+.stepnav .pick:hover { background: var(--grid); }
+.stepnav .pick[aria-current="step"] { background: var(--signal); color: var(--paper); box-shadow: 3px 3px 0 var(--ink); }
+.stepnav .pick:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
+.stepnav .arrow { width: 40px; height: 40px; padding: 0; font-size: 20px; display: grid; place-items: center; }
+.stepnav .btn:disabled { opacity: .4; cursor: default; }
+
+.opts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.opt { font-family: var(--f-mono); font-size: 17px; font-weight: 600; padding: 10px; border: 2px solid var(--ink); border-radius: 6px; background: var(--paper); color: var(--ink); cursor: pointer; font-variant-numeric: tabular-nums; }
+.opt:hover:not(:disabled) { background: var(--grid); }
+.opt.ok { background: var(--grass); color: var(--paper); }
+.opt.ko { text-decoration: line-through; opacity: .55; }
+.quiz-grid { display: grid; grid-template-columns: minmax(0, 170px) minmax(0, 1fr); gap: 16px; align-items: center; }
+@media (max-width: 520px) { .quiz-grid { grid-template-columns: minmax(0, 1fr); } }
+.quiz-grid svg { width: 100%; max-width: 170px; height: auto; display: block; margin: 0 auto; border: 2px solid var(--ink); border-radius: 6px; background: var(--paper); }
+.feedback { min-height: 1.6em; margin: 10px 0 0; font-weight: 500; }
+.score { font-size: 14px; color: var(--muted); }
+
+@media (min-width: 901px) {
+  .layout { align-items: stretch; }
+  .stage-col { display: flex; flex-direction: column; }
+  .readout { margin-top: auto; }
+  .steps-col { contain: size; display: flex; flex-direction: column; gap: 12px; }
+  .steps { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 8px; }
+  .stepnav { flex: none; }
+}
+@media (prefers-reduced-motion: reduce) { .step.enter { animation: none; } }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="soldat_joueur" viewBox="0 0 64 64">
+  <!-- ombre -->
+  <ellipse cx="30" cy="34" rx="15" ry="17" fill="#000" opacity="0.25"/>
+  <!-- sac à dos -->
+  <rect x="12" y="23" width="10" height="18" rx="3" fill="#3a5a2a" stroke="#1a1a1a" stroke-width="1.5"/>
+  <!-- épaules / torse -->
+  <ellipse cx="28" cy="32" rx="10" ry="15" fill="#4f7a3a" stroke="#1a1a1a" stroke-width="1.5"/>
+  <!-- bras arrière (gauche du perso, en bas) -->
+  <path d="M30 42 L40 38 L44 35" fill="none" stroke="#3a5a2a" stroke-width="6" stroke-linecap="round"/>
+  <!-- fusil -->
+  <rect x="34" y="31" width="26" height="4" rx="1" fill="#2b2b2b" stroke="#111" stroke-width="1"/>
+  <rect x="36" y="33" width="5" height="6" rx="1" fill="#2b2b2b" stroke="#111" stroke-width="1"/>
+  <rect x="56" y="31.5" width="5" height="3" fill="#111"/>
+  <!-- bras avant (droite du perso, en haut) -->
+  <path d="M30 22 L40 27 L48 31" fill="none" stroke="#4f7a3a" stroke-width="6" stroke-linecap="round"/>
+  <path d="M30 22 L40 27 L48 31" fill="none" stroke="#1a1a1a" stroke-width="7.5" stroke-linecap="round" opacity="0.0"/>
+  <!-- mains -->
+  <circle cx="44" cy="35" r="3" fill="#e0b48a" stroke="#1a1a1a" stroke-width="1"/>
+  <circle cx="48" cy="31" r="3" fill="#e0b48a" stroke="#1a1a1a" stroke-width="1"/>
+  <!-- casque -->
+  <circle cx="30" cy="32" r="8.5" fill="#5d8a45" stroke="#1a1a1a" stroke-width="1.5"/>
+  <circle cx="28" cy="30" r="4" fill="#3e6230" opacity="0.5"/>
+  <circle cx="32" cy="29" r="1.6" fill="#fff" opacity="0.35"/>
+</symbol>
+<symbol id="balle" viewBox="0 0 16 8">
+  <path d="M1 2.5 H10 C13 2.5 15 3.2 15 4 C15 4.8 13 5.5 10 5.5 H1 Z" fill="#e8b33c" stroke="#7a5212" stroke-width="1"/>
+  <rect x="1" y="2.5" width="3" height="3" fill="#b8862a"/>
+</symbol>
+<symbol id="flash_tir" viewBox="0 0 32 32">
+  <path d="M2 16 L12 9 L14 4 L18 11 L30 16 L18 21 L14 28 L12 23 Z" fill="#ffb23e"/>
+  <path d="M5 16 L13 12 L15 8 L18 13 L25 16 L18 19 L15 24 L13 20 Z" fill="#ffe27a"/>
+  <circle cx="13" cy="16" r="3" fill="#fff8de"/>
+</symbol>
+<marker id="mx" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="var(--dx)"/></marker>
+<marker id="my" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="var(--dy)"/></marker>
+</defs></svg>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Atelier Python · Codesters · trigonométrie de jeu</span>
+    <h1>Le bout du <span class="o">canon</span></h1>
+    <p class="lede">La balle doit sortir du <b>bout du fusil</b>, pas du milieu du soldat. Comme le soldat tourne, le bout du canon bouge : <b>cos</b> et <b>sin</b> disent exactement où il se trouve.</p>
+  </header>
+
+  <div class="layout">
+    <div class="stage-col">
+      <div class="stage">
+        <span class="zoom">zoom ×2</span>
+        <svg id="stage" viewBox="-220 -140 440 280" role="img" aria-label="Le soldat vise la souris et tire depuis le point choisi">
+          <g id="gridLayer"></g>
+          <line x1="-220" y1="0" x2="220" y2="0" stroke="var(--muted)" stroke-width="1.5" opacity=".5"/>
+          <line x1="0" y1="-140" x2="0" y2="140" stroke="var(--muted)" stroke-width="1.5" opacity=".5"/>
+          <g id="bullets"></g>
+          <g id="soldier"><use href="#soldat_joueur" x="-64" y="-64" width="128" height="128"/></g>
+          <g id="overlay">
+            <circle r="58" fill="none" stroke="var(--ink)" stroke-width="2" stroke-dasharray="5 6" opacity=".7"/>
+            <line id="lx" x1="0" y1="0" x2="0" y2="0" stroke="var(--dx)" stroke-width="5" stroke-linecap="round"/>
+            <line id="ly" x1="0" y1="0" x2="0" y2="0" stroke="var(--dy)" stroke-width="5" stroke-linecap="round"/>
+            <line id="lr" x1="0" y1="0" x2="0" y2="0" stroke="var(--signal)" stroke-width="2.5" stroke-dasharray="4 4"/>
+            <circle r="4" fill="var(--ink)"/>
+          </g>
+          <g id="spawn"><circle r="9" fill="none" stroke="var(--signal)" stroke-width="3"/><circle r="3" fill="var(--signal)"/></g>
+          <g id="flash" visibility="hidden"><use href="#flash_tir" x="-4" y="-22" width="44" height="44"/></g>
+          <g font-family="var(--f-mono)" font-weight="600" font-size="14">
+            <g id="labX"><rect id="labXbg" rx="4" fill="var(--paper)" stroke="var(--dx)" stroke-width="1.5"/><text id="labXt" fill="var(--dx)" text-anchor="middle" dominant-baseline="central"></text></g>
+            <g id="labY"><rect id="labYbg" rx="4" fill="var(--paper)" stroke="var(--dy)" stroke-width="1.5"/><text id="labYt" fill="var(--dy)" text-anchor="middle" dominant-baseline="central"></text></g>
+          </g>
+          <g id="target"><circle r="10" fill="none" stroke="var(--ink)" stroke-width="2"/><path d="M-16 0 H-6 M6 0 H16 M0 -16 V-6 M0 6 V16" stroke="var(--ink)" stroke-width="2"/></g>
+          <text id="modeTag" x="-210" y="-120" font-family="var(--f-body)" font-weight="700" font-size="14" fill="var(--signal)"></text>
+        </svg>
+      </div>
+      <div class="controls">
+        <div class="seg" role="group" aria-label="D'où part la balle">
+          <button type="button" data-mode="centre" aria-pressed="false">Centre</button>
+          <button type="button" data-mode="fixe" aria-pressed="false">x + 32</button>
+          <button type="button" data-mode="trig" aria-pressed="true">cos / sin</button>
+        </div>
+        <button class="btn" id="autoBtn" type="button">Pause</button>
+      </div>
+      <p class="hint">Bouge la souris sur le terrain pour viser, clique pour tirer. Les boutons changent l'endroit d'où part la balle.</p>
+      <div class="readout">
+        <div class="chip c-a"><span class="k">Angle</span><span class="v" id="va">0°</span></div>
+        <div class="chip c-x"><span class="k">Décalage x</span><span class="v" id="vx">0</span></div>
+        <div class="chip c-y"><span class="k">Décalage y</span><span class="v" id="vy">0</span></div>
+      </div>
+    </div>
+
+    <div class="steps-col">
+      <div class="steps" id="steps">
+        <section class="step">
+          <div class="step-head"><span class="num">1</span><h2>Le problème</h2></div>
+          <p>Quand on crée la balle à la position du joueur, elle apparaît <b>au milieu du soldat</b> : sur son casque. Elle traverse son corps avant de sortir. Ça se voit, et ça fait bizarre.</p>
+          <div class="card"><p>Choisis <b>Centre</b> sous le terrain et regarde d'où partent les balles.</p></div>
+          <p>Ce qu'on veut : que la balle apparaisse <span class="aw">au bout du fusil</span>, quelle que soit la direction où le soldat regarde.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">2</span><h2>L'idée naïve : ajouter un décalage</h2></div>
+          <p>Première idée : le canon est à droite du soldat, donc on ajoute la moitié de sa taille à x.</p>
+          <div class="card formula"><span>x_balle = x_joueur + 32</span><span>y_balle = y_joueur</span></div>
+          <p>Choisis <b>x + 32</b> et vise vers la droite : ça marche. Maintenant vise vers le haut ou vers la gauche : la balle part <span class="bw">à côté du soldat</span>, toujours au même endroit.</p>
+          <p>Le décalage dépend de la direction. Vers la droite, c'est tout en x. Vers le haut, c'est tout en y. Et en diagonale, c'est un peu des deux. Il faut une règle qui calcule ce mélange.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">3</span><h2>Le canon tourne en cercle</h2></div>
+          <p>Le bout du canon est toujours à la <b>même distance</b> du centre du soldat : <b>29 pixels</b>. Quand le soldat tourne, le bout du canon se déplace sur un <b>cercle</b> de rayon 29, dessiné en pointillé sur le terrain.</p>
+          <p>Notre question devient : pour un angle donné, où est le point sur ce cercle ? Autrement dit, de combien faut-il aller <span class="xw">vers la droite</span> et <span class="yw">vers le haut</span> depuis le centre ?</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">4</span><h2>cos et sin</h2></div>
+          <p>Python a deux machines pour ça. Pour un pas de longueur 1 dans la direction de l'angle :</p>
+          <div class="card formula">
+            <span><span class="xw">cos(angle)</span> = combien on va vers la droite</span>
+            <span><span class="yw">sin(angle)</span> = combien on va vers le haut</span>
+          </div>
+          <p>Notre pas fait 29 pixels, on multiplie donc par 29 :</p>
+          <div class="card formula">
+            <span>décalage x = 29 × cos(<span id="s4a">0</span>°) = <span class="xw" id="s4x">29</span></span>
+            <span>décalage y = 29 × sin(<span id="s4b">0</span>°) = <span class="yw" id="s4y">0</span></span>
+          </div>
+          <p class="say">atan2 transforme un déplacement en angle. cos et sin font l'inverse : ils transforment un angle en déplacement.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">5</span><h2>Les cas faciles</h2></div>
+          <p>Vérifions avec les directions qu'on connaît. Vise dans chacune sur le terrain et regarde les cases du bas.</p>
+          <div class="card tbl-wrap">
+            <table>
+              <thead><tr><th>Le soldat regarde</th><th>cos</th><th>sin</th><th>Décalage</th></tr></thead>
+              <tbody>
+                <tr><td>à droite (0°)</td><td class="m">1</td><td class="m">0</td><td class="m">(29, 0)</td></tr>
+                <tr><td>en haut (90°)</td><td class="m">0</td><td class="m">1</td><td class="m">(0, 29)</td></tr>
+                <tr><td>à gauche (180°)</td><td class="m">−1</td><td class="m">0</td><td class="m">(−29, 0)</td></tr>
+                <tr><td>en bas (−90°)</td><td class="m">0</td><td class="m">−1</td><td class="m">(0, −29)</td></tr>
+                <tr><td>en diagonale (45°)</td><td class="m">0,71</td><td class="m">0,71</td><td class="m">(20,5, 20,5)</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Les quatre premières lignes, c'est ce que ferait une forêt de <span class="mono">if</span>. cos et sin gèrent aussi <b>tous les angles entre les deux</b>.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">6</span><h2>Dans Codesters</h2></div>
+          <p>Attention à l'unité : cos et sin veulent des <b>radians</b>. On convertit l'angle avec <span class="mono">math.radians()</span>, l'inverse de <span class="mono">math.degrees()</span>.</p>
+          <pre class="code" id="code"></pre>
+          <p class="say">Si le joueur a un set_size différent de 1, multiplie aussi la distance : avec set_size(1.5), utilise environ 44.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">★</span><h2>Défi : où sort la balle ?</h2></div>
+          <div class="card">
+            <div class="quiz-grid">
+              <svg id="qsvg" viewBox="-80 -80 160 160" role="img" aria-label="Le soldat du défi">
+                <line x1="-80" y1="0" x2="80" y2="0" stroke="var(--muted)" opacity=".45"/>
+                <line x1="0" y1="-80" x2="0" y2="80" stroke="var(--muted)" opacity=".45"/>
+                <g id="qs"><use href="#soldat_joueur" x="-48" y="-48" width="96" height="96"/></g>
+                <g id="qtip" visibility="hidden"><circle r="7" fill="none" stroke="var(--signal)" stroke-width="3"/></g>
+              </svg>
+              <div>
+                <p style="margin:0 0 10px" id="qtext"></p>
+                <div class="opts" id="opts"></div>
+                <p class="feedback" id="qfb" aria-live="polite"></p>
+                <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+                  <button class="btn" id="qnext" type="button">Question suivante</button>
+                  <span class="score" id="qscore">Score : 0 / 0</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+      <nav class="stepnav" id="stepnav" aria-label="Étapes">
+        <button class="btn arrow" id="prevStep" type="button" aria-label="Étape précédente" title="Précédent">←</button>
+        <span id="picks" style="display:flex;gap:6px;flex-wrap:wrap"></span>
+        <button class="btn arrow" id="nextStep" type="button" aria-label="Étape suivante" title="Suivant">→</button>
+      </nav>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const NS = 'http://www.w3.org/2000/svg';
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const Z = 2, D = 29;                 // zoom d'affichage, distance réelle du canon
+  const fr = (n, d = 1) => { const s = n.toFixed(d).replace('.', ',').replace(/^-/, '−'); return s === '−0' || /^−0,0+$/.test(s) ? s.slice(1) : s; };
+
+  let g = '';
+  for (let x = -216; x <= 220; x += 24) g += `<line x1="${x}" y1="-140" x2="${x}" y2="140" stroke="var(--grid)" stroke-width="1"/>`;
+  for (let y = -132; y <= 140; y += 24) g += `<line x1="-220" y1="${y}" x2="220" y2="${y}" stroke="var(--grid)" stroke-width="1"/>`;
+  $('gridLayer').innerHTML = g;
+
+  let mode = 'trig', angle = 30, shown = 30, auto = true, mouse = null, flash = 0, sweep = 30, lastShot = 0;
+  const bullets = [];
+
+  function spawnPoint(a) {      // en pixels réels (avant zoom)
+    const r = a * Math.PI / 180;
+    if (mode === 'centre') return { x: 0, y: 0 };
+    if (mode === 'fixe') return { x: 32, y: 0 };
+    return { x: Math.cos(r) * D, y: Math.sin(r) * D };
+  }
+  function shoot() {
+    const p = spawnPoint(shown), r = shown * Math.PI / 180;
+    const el = document.createElementNS(NS, 'g');
+    const u = document.createElementNS(NS, 'use');
+    u.setAttribute('href', '#balle'); u.setAttribute('x', -16); u.setAttribute('y', -8); u.setAttribute('width', 32); u.setAttribute('height', 16);
+    el.appendChild(u); $('bullets').appendChild(el);
+    bullets.push({ x: p.x * Z, y: p.y * Z, vx: Math.cos(r) * 7, vy: Math.sin(r) * 7, rot: shown, el });
+    flash = 5;
+  }
+
+  function place(id, x, y, txt) {
+    const t = $(id + 't'), b = $(id + 'bg'), w = 12 + txt.length * 8.6;
+    t.textContent = txt; t.setAttribute('x', x); t.setAttribute('y', y);
+    b.setAttribute('x', x - w / 2); b.setAttribute('y', y - 12); b.setAttribute('width', w); b.setAttribute('height', 24);
+  }
+
+  function draw() {
+    const r = shown * Math.PI / 180, cx = Math.cos(r) * D, sy = Math.sin(r) * D;
+    $('soldier').setAttribute('transform', `rotate(${-shown})`);
+    $('lx').setAttribute('x2', cx * Z);
+    $('ly').setAttribute('x1', cx * Z); $('ly').setAttribute('x2', cx * Z); $('ly').setAttribute('y2', -sy * Z);
+    $('lr').setAttribute('x2', cx * Z); $('lr').setAttribute('y2', -sy * Z);
+    const trig = mode === 'trig';
+    $('overlay').setAttribute('visibility', trig ? 'visible' : 'hidden');
+    // étiquettes à l'extérieur du soldat, du côté opposé à la pointe
+    const lxY = Math.abs(sy) < 6 ? 84 : (sy > 0 ? 84 : -84);
+    place('labX', Math.max(-180, Math.min(180, cx * Z / 2)), lxY, 'x ' + (cx >= 0 ? '+' : '−') + fr(Math.abs(cx)));
+    const lyX = cx >= 0 ? cx * Z + 100 : cx * Z - 100;
+    place('labY', Math.max(-170, Math.min(170, lyX)), Math.max(-110, Math.min(110, -sy * Z / 2)), 'y ' + (sy >= 0 ? '+' : '−') + fr(Math.abs(sy)));
+    $('labX').setAttribute('visibility', trig ? 'visible' : 'hidden');
+    $('labY').setAttribute('visibility', trig ? 'visible' : 'hidden');
+
+    const p = spawnPoint(shown);
+    $('spawn').setAttribute('transform', `translate(${p.x * Z} ${-p.y * Z})`);
+    $('flash').setAttribute('transform', `translate(${p.x * Z} ${-p.y * Z}) rotate(${-shown})`);
+    $('flash').setAttribute('visibility', flash > 0 ? 'visible' : 'hidden');
+    const names = { centre: 'La balle part du centre', fixe: 'La balle part de x + 32', trig: 'La balle part du bout du canon' };
+    $('modeTag').textContent = names[mode];
+    $('modeTag').setAttribute('fill', mode === 'trig' ? 'var(--grass)' : 'var(--bug)');
+    if (mouse) { $('target').setAttribute('visibility', 'visible'); $('target').setAttribute('transform', `translate(${mouse.x} ${-mouse.y})`); }
+    else $('target').setAttribute('visibility', 'hidden');
+
+    $('va').textContent = fr(shown) + '°';
+    $('vx').textContent = fr(p.x); $('vy').textContent = fr(p.y);
+    $('s4a').textContent = fr(shown); $('s4b').textContent = fr(shown);
+    $('s4x').textContent = fr(cx); $('s4y').textContent = fr(sy);
+    bullets.forEach(b => b.el.setAttribute('transform', `translate(${b.x} ${-b.y}) rotate(${-b.rot})`));
+  }
+
+  function tick(t) {
+    if (auto && !mouse) {
+      if (!reduce) sweep = (sweep + 0.5) % 360;
+      angle = sweep > 180 ? sweep - 360 : sweep;
+      if (t - lastShot > 650) { lastShot = t; shoot(); }
+    }
+    let diff = ((angle - shown + 540) % 360) - 180;
+    shown = reduce || Math.abs(diff) < 0.05 ? angle : shown + diff * 0.2;
+    shown = ((shown + 540) % 360) - 180;
+    for (let i = bullets.length - 1; i >= 0; i--) {
+      const b = bullets[i]; b.x += b.vx; b.y += b.vy;
+      if (Math.abs(b.x) > 240 || Math.abs(b.y) > 160) { b.el.remove(); bullets.splice(i, 1); }
+    }
+    if (flash > 0) flash--;
+    draw();
+    requestAnimationFrame(tick);
+  }
+
+  const svg = $('stage');
+  function toStage(e) {
+    const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+    const q = pt.matrixTransform(svg.getScreenCTM().inverse()); return { x: q.x, y: -q.y };
+  }
+  function aimAt(m) { if (Math.hypot(m.x, m.y) > 4) angle = Math.atan2(m.y, m.x) * 180 / Math.PI; }
+  function stopAuto() { auto = false; $('autoBtn').textContent = 'Démo auto'; }
+  svg.addEventListener('pointermove', e => { mouse = toStage(e); aimAt(mouse); stopAuto(); });
+  svg.addEventListener('pointerleave', () => { mouse = null; });
+  svg.addEventListener('pointerdown', e => { mouse = toStage(e); aimAt(mouse); stopAuto(); shown = angle; shoot(); });
+  $('autoBtn').addEventListener('click', () => { auto = !auto; $('autoBtn').textContent = auto ? 'Pause' : 'Démo auto'; if (auto) { mouse = null; sweep = (shown + 360) % 360; } });
+  document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => {
+    mode = b.dataset.mode;
+    document.querySelectorAll('.seg button').forEach(o => o.setAttribute('aria-pressed', o === b));
+  }));
+
+  $('code').innerHTML =
+`<span class="kw">import</span> math
+
+DISTANCE_CANON = 29   <span class="cm"># du centre au bout du fusil</span>
+balles = []
+
+<span class="kw">def</span> <span class="fn">tirer</span>():
+    angle = <span class="fn">rotate_character</span>(stage.<span class="fn">mouse_x</span>(), stage.<span class="fn">mouse_y</span>(),
+                             player.<span class="fn">get_x</span>(), player.<span class="fn">get_y</span>())  <span class="cm"># en degrés</span>
+    a = math.<span class="fn">radians</span>(angle)                <span class="cm"># en radians</span>
+    x = player.<span class="fn">get_x</span>() + math.<span class="fn">cos</span>(a) * DISTANCE_CANON
+    y = player.<span class="fn">get_y</span>() + math.<span class="fn">sin</span>(a) * DISTANCE_CANON
+    balle = codesters.Sprite(<span class="lv">"bullet_xxx"</span>, x, y)  <span class="cm"># ton image</span>
+    balle.<span class="fn">set_rotation</span>(angle)
+    balles.<span class="fn">append</span>(balle)
+
+stage.<span class="fn">event_click</span>(tirer)   <span class="cm"># ou l\'événement prévu dans la leçon</span>`;
+
+  // ----- étapes -----
+  const steps = [...document.querySelectorAll('#steps .step')];
+  let cur = 0;
+  $('picks').innerHTML = steps.map((s, i) => `<button class="pick" type="button" data-i="${i}" aria-label="Étape ${s.querySelector('.num').textContent}">${s.querySelector('.num').textContent}</button>`).join('');
+  function showStep(i, anim = true) {
+    cur = Math.max(0, Math.min(steps.length - 1, i));
+    steps.forEach((s, k) => { s.hidden = k !== cur; s.classList.remove('enter'); });
+    if (anim && !reduce) { void steps[cur].offsetWidth; steps[cur].classList.add('enter'); }
+    $('picks').querySelectorAll('.pick').forEach((b, k) => { if (k === cur) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current'); });
+    $('prevStep').disabled = cur === 0; $('nextStep').disabled = cur === steps.length - 1;
+  }
+  $('picks').addEventListener('click', e => { const b = e.target.closest('.pick'); if (b) showStep(+b.dataset.i); });
+  $('prevStep').addEventListener('click', () => showStep(cur - 1));
+  $('nextStep').addEventListener('click', () => showStep(cur + 1));
+  document.addEventListener('keydown', e => { if (e.key === 'ArrowRight') showStep(cur + 1); if (e.key === 'ArrowLeft') showStep(cur - 1); });
+
+  // ----- défi -----
+  const Q = [
+    { a: 0, ans: '(29, 0)' }, { a: 90, ans: '(0, 29)' }, { a: 180, ans: '(−29, 0)' }, { a: -90, ans: '(0, −29)' },
+    { a: 45, ans: '(20,5, 20,5)' }, { a: 135, ans: '(−20,5, 20,5)' }, { a: -135, ans: '(−20,5, −20,5)' }, { a: -45, ans: '(20,5, −20,5)' }
+  ];
+  const pool = Q.map(q => q.ans);
+  let q = null, last = -1, answered = false, score = 0, total = 0;
+  function nextQ() {
+    let i; do { i = Math.floor(Math.random() * Q.length); } while (i === last); last = i; q = Q[i]; answered = false;
+    $('qs').setAttribute('transform', `rotate(${-q.a})`); $('qtip').setAttribute('visibility', 'hidden');
+    $('qtext').innerHTML = `Le soldat regarde à <b>${fr(q.a, 0)}°</b>. Quel décalage pour le bout du canon ?`;
+    const wrong = pool.filter(v => v !== q.ans).sort(() => Math.random() - .5).slice(0, 3);
+    $('opts').innerHTML = [q.ans, ...wrong].sort(() => Math.random() - .5).map(v => `<button class="opt" type="button">${v}</button>`).join('');
+    $('qfb').textContent = '';
+  }
+  $('opts').addEventListener('click', e => {
+    const b = e.target.closest('.opt'); if (!b || answered) return;
+    answered = true; total++;
+    const ok = b.textContent === q.ans; if (ok) score++;
+    $('opts').querySelectorAll('.opt').forEach(o => { o.disabled = true; if (o.textContent === q.ans) o.classList.add('ok'); else if (o === b) o.classList.add('ko'); });
+    const r = q.a * Math.PI / 180;
+    $('qtip').setAttribute('transform', `translate(${Math.cos(r) * 43.5} ${-Math.sin(r) * 43.5})`); $('qtip').setAttribute('visibility', 'visible');
+    $('qfb').textContent = ok ? 'Bien vu, la balle sort pile du canon !' : `Pas tout à fait : 29 × cos(${fr(q.a, 0)}°) et 29 × sin(${fr(q.a, 0)}°) donnent ${q.ans}.`;
+    $('qscore').textContent = `Score : ${score} / ${total}`;
+  });
+  $('qnext').addEventListener('click', nextQ);
+
+  // ----- hauteur : pas de défilement à droite -----
+  const deskMQ = window.matchMedia('(min-width: 901px)');
+  function fitHeight() {
+    const col = document.querySelector('.stage-col');
+    col.style.minHeight = '';
+    if (!deskMQ.matches) return;
+    const box = $('steps'); let max = 0;
+    steps.forEach((s, k) => { steps.forEach((o, j) => o.hidden = j !== k); max = Math.max(max, box.scrollHeight); });
+    steps.forEach((o, j) => o.hidden = j !== cur);
+    col.style.minHeight = Math.ceil(max + 12 + $('stepnav').offsetHeight) + 'px';
+  }
+
+  showStep(0, false); nextQ(); draw(); fitHeight();
+  window.addEventListener('resize', fitHeight);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitHeight);
+  if (reduce) { auto = false; $('autoBtn').textContent = 'Démo auto'; }
+  requestAnimationFrame(tick);
+})();
+</script>
