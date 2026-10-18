@@ -23,7 +23,7 @@ Les images du jeu, au format PNG. Tous les personnages regardent vers la **droit
 Lien direct d'une image (pour l'importer dans Codesters) :
 
 ```
-https://raw.githubusercontent.com/Pwaluh/python_assets/master/sprites/NOM_DU_FICHIER.png
+https://raw.githubusercontent.com/Pwaluh/stages/master/sprites/NOM_DU_FICHIER.png
 ```
 
 Codesters réduit les grandes images pour les faire tenir dans la scène : la map s'affiche à environ 300 px, il faut donc lui donner `map.set_size(6.8)` pour retrouver sa vraie taille.
