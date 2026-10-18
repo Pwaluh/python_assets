@@ -36,3 +36,7 @@ Des pages interactives à ouvrir dans le navigateur pour expliquer le jeu aux é
 - `world_scrolling_explained.html` : **La carte qui glisse** – pourquoi l'hélico, les zombies et les balles doivent bouger en même temps que la map.
 - `muzzle_explained.html` : **Le bout du canon** – comment `cos` et `sin` font partir la balle du bout du fusil, quel que soit l'angle.
 - `side_offset_explained.html` : **Le pas de côté** – le petit décalage sur le côté quand le fusil n'est pas pile dans l'axe du soldat.
+
+## `shooter_steps/`
+
+Le code du jeu en 5 étapes (joueur, hélico, zombies, tir, victoire/défaite), chacune en version **base** et **bonus**. Le guide est dans `shooter_steps/README.md`.
