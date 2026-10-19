@@ -1,0 +1,485 @@
+<title>Le mur de boucliers</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout : borne d'arcade. Gauche = écran de jeu + réglages, droite = étapes une à une. Thème volontairement sombre (écran CRT). */
+:root {
+  --bg: #0a0c1c;
+  --bg2: #10142e;
+  --panel: #161b3d;
+  --line: #2b3266;
+  --ink: #e7ebff;
+  --muted: #8f97c7;
+  --shield: #5cf28a;   /* les boucliers */
+  --k: #ff5fb4;        /* compteur k : quel bouclier */
+  --col: #59d6ff;      /* compteur col */
+  --row: #ffc94a;      /* compteur row */
+  --bad: #ff5b5b;
+  --f-display: "Press Start 2P", "Courier New", monospace;
+  --f-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "Consolas", monospace;
+  color-scheme: dark;
+}
+
+html { background: var(--bg); }
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--f-body); font-size: 17px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 48px;
+  min-height: 100vh;
+  background-attachment: fixed;
+  background-image:
+    radial-gradient(ellipse at 20% 0%, rgba(92, 242, 138, .07), transparent 55%),
+    radial-gradient(ellipse at 90% 100%, rgba(255, 95, 180, .07), transparent 50%);
+}
+.wrap { max-width: 1180px; margin: 0 auto; }
+@media (min-width: 1400px) { .wrap { max-width: 1400px; } }
+
+header { display: grid; gap: 10px; margin-bottom: 24px; max-width: 62ch; }
+.eyebrow { font-family: var(--f-mono); font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(22px, 4.2vw, 38px); line-height: 1.2; margin: 0; color: var(--ink); text-shadow: 0 0 18px rgba(92, 242, 138, .25); }
+h1 .o { color: var(--shield); }
+.lede { margin: 0; font-size: 18px; color: var(--muted); }
+.lede b { color: var(--ink); }
+@media (min-width: 901px) {
+  body { padding-block: 22px; }
+  body header { max-width: none; display: flex; flex-wrap: wrap; align-items: flex-end; column-gap: 48px; row-gap: 8px; margin-bottom: 22px; }
+  body header .eyebrow { flex: 1 0 100%; }
+  body header h1 { flex: none; }
+  body header .lede { flex: 1 1 420px; max-width: 640px; min-width: 0; font-size: 17px; line-height: 1.5; }
+}
+
+.layout { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 36px; align-items: start; }
+@media (max-width: 900px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+/* --- écran --- */
+.stage-col { display: grid; gap: 12px; min-width: 0; }
+.screen { position: relative; border: 3px solid var(--line); border-radius: 14px; overflow: hidden; background: #05061a; box-shadow: 0 0 0 6px var(--bg2), 0 0 40px rgba(92, 242, 138, .12); max-width: 100%; }
+.screen::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(255,255,255,.035) 0 1px, transparent 1px 3px); }
+.screen svg { display: block; width: 100%; height: auto; }
+.screen image { image-rendering: pixelated; }
+.controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 18px; }
+@media (max-width: 520px) { .controls { grid-template-columns: minmax(0, 1fr); } }
+.ctl { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 2px 10px; font-size: 14px; }
+.ctl label { font-family: var(--f-mono); font-size: 13px; color: var(--muted); }
+.ctl output { font-family: var(--f-mono); font-weight: 600; font-size: 14px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.ctl input { grid-column: 1 / -1; width: 100%; accent-color: var(--shield); }
+.ctl input:focus-visible { outline: 2px solid var(--shield); outline-offset: 3px; }
+.bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.seg { display: inline-flex; border: 2px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { font: inherit; font-size: 14px; font-weight: 700; padding: 6px 12px; border: 0; border-right: 2px solid var(--line); background: var(--bg2); color: var(--muted); cursor: pointer; }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--shield); color: #06130b; }
+.btn { font: inherit; font-size: 14px; font-weight: 700; background: var(--panel); color: var(--ink); border: 2px solid var(--line); border-radius: 8px; padding: 6px 14px; cursor: pointer; }
+.btn:hover { border-color: var(--shield); }
+.btn.go { background: var(--shield); color: #06130b; border-color: var(--shield); }
+.btn:focus-visible, .seg button:focus-visible, .opt:focus-visible { outline: 2px solid var(--shield); outline-offset: 2px; }
+.readout { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.chip { background: var(--panel); border: 2px solid var(--line); border-radius: 10px; padding: 8px 12px; display: grid; align-content: center; min-width: 0; min-height: 70px; }
+.chip .k { font-family: var(--f-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chip .v { font-family: var(--f-display); font-size: 18px; line-height: 1.6; white-space: nowrap; }
+.c-k .v { color: var(--k); } .c-r .v { color: var(--row); } .c-c .v { color: var(--col); }
+
+/* --- étapes --- */
+.steps-col { display: grid; gap: 20px; min-width: 0; }
+.steps { display: grid; min-width: 0; align-content: start; }
+.step { display: grid; gap: 12px; align-content: start; }
+.step[hidden] { display: none; }
+.step.enter { animation: enter .3s steps(4, end); }
+@keyframes enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.step-head { display: flex; align-items: baseline; gap: 14px; }
+.num { font-family: var(--f-display); font-size: 26px; line-height: 1; color: var(--shield); min-width: 1.4ch; }
+h2 { font-family: var(--f-display); font-weight: 400; font-size: 16px; line-height: 1.5; margin: 0; text-wrap: balance; }
+.step p { margin: 0; max-width: 62ch; }
+.kw { color: var(--k); font-weight: 700; } .cw { color: var(--col); font-weight: 700; } .rw { color: var(--row); font-weight: 700; } .sw { color: var(--shield); font-weight: 700; } .bw { color: var(--bad); font-weight: 700; }
+.card { background: var(--panel); border: 2px solid var(--line); border-radius: 10px; padding: 14px 16px; min-width: 0; }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.formula { font-family: var(--f-mono); font-size: 15.5px; display: grid; gap: 4px; overflow-x: auto; font-variant-numeric: tabular-nums; }
+.say { font-style: italic; color: var(--muted); }
+.tbl-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 5px 10px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--f-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 400; }
+td.m { font-family: var(--f-mono); font-weight: 600; white-space: nowrap; }
+pre.code { margin: 0; background: #05061a; color: var(--ink); border-radius: 10px; padding: 14px 16px; font-family: var(--f-mono); font-size: 13.5px; line-height: 1.65; overflow-x: auto; border: 2px solid var(--line); }
+.code .kwd { color: #c7a6ff; } .code .fn { color: var(--shield); } .code .cm { color: #6b739f; } .code .ck { color: var(--k); } .code .cr { color: var(--row); } .code .cc { color: var(--col); } .code .nb { color: #ffd88a; }
+
+.stepnav { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: space-between; background: var(--panel); border: 2px solid var(--line); border-radius: 10px; min-height: 70px; padding: 8px 10px; }
+.stepnav .pick { font-family: var(--f-display); font-size: 13px; width: 40px; height: 40px; border: 2px solid var(--line); border-radius: 8px; background: var(--bg2); color: var(--ink); cursor: pointer; display: grid; place-items: center; }
+.stepnav .pick:hover { border-color: var(--shield); }
+.stepnav .pick[aria-current="step"] { background: var(--shield); color: #06130b; border-color: var(--shield); box-shadow: 0 0 14px rgba(92, 242, 138, .45); }
+.stepnav .pick:focus-visible { outline: 2px solid var(--shield); outline-offset: 2px; }
+.stepnav .arrow { width: 40px; height: 40px; padding: 0; font-size: 18px; display: grid; place-items: center; }
+.stepnav .btn:disabled { opacity: .35; cursor: default; }
+
+.opts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.opt { font-family: var(--f-mono); font-size: 18px; font-weight: 600; padding: 10px; border: 2px solid var(--line); border-radius: 8px; background: var(--bg2); color: var(--ink); cursor: pointer; font-variant-numeric: tabular-nums; }
+.opt:hover:not(:disabled) { border-color: var(--shield); }
+.opt.ok { background: var(--shield); color: #06130b; border-color: var(--shield); }
+.opt.ko { text-decoration: line-through; opacity: .5; }
+.feedback { min-height: 1.6em; margin: 10px 0 0; font-weight: 700; }
+.score { font-size: 14px; color: var(--muted); }
+
+@media (min-width: 901px) {
+  .layout { align-items: stretch; }
+  .stage-col { display: flex; flex-direction: column; }
+  .readout { margin-top: auto; }
+  .steps-col { contain: size; display: flex; flex-direction: column; gap: 12px; }
+  .steps { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 8px; }
+  .stepnav { flex: none; }
+}
+@media (prefers-reduced-motion: reduce) { .step.enter { animation: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Atelier Python · Codesters · boucles imbriquées</span>
+    <h1>Le mur de <span class="o">boucliers</span></h1>
+    <p class="lede">Trois boucliers, six tuiles chacun, et deux petites fonctions. On construit le mur <b>tuile par tuile</b> pour voir ce que font vraiment <b>k</b>, <b>row</b> et <b>col</b>.</p>
+  </header>
+
+  <div class="layout">
+    <div class="stage-col">
+      <div class="screen">
+        <svg id="stage" viewBox="-262 -44 524 292" role="img" aria-label="Écran de jeu : le mur de boucliers se construit tuile par tuile">
+          <rect x="-250" y="-44" width="500" height="292" fill="#05061a"/>
+          <g id="stars"></g>
+          <g id="ruler"></g>
+          <line x1="0" y1="-14" x2="0" y2="232" stroke="var(--ink)" stroke-width="1.5" stroke-dasharray="3 5" opacity=".45"/>
+          <text x="6" y="74" font-family="var(--f-mono)" font-size="10" fill="var(--muted)">centre de l'écran</text>
+          <g id="aliens"></g>
+          <line id="wallCenter" x1="0" y1="80" x2="0" y2="196" stroke="var(--k)" stroke-width="2.5"/>
+          <g id="tiles"></g>
+          <g id="markers"></g>
+          <rect id="cursor" width="28" height="28" fill="none" stroke="#ffffff" stroke-width="2.5" visibility="hidden"/>
+          <g id="curLabel" visibility="hidden" font-family="var(--f-mono)" font-weight="600" font-size="12">
+            <rect id="curBg" rx="4" fill="#05061a" stroke="var(--col)" stroke-width="1.5"/>
+            <text id="curTxt" fill="var(--col)" text-anchor="middle" dominant-baseline="central"></text>
+          </g>
+          <image id="ship" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACcAAAAkCAYAAAAKNyObAAABMUlEQVR4nGNkoBIQEVL6D2O/eXePkRpmMlHDEFqBQe04ioIfOSqbDtyFi9c5KMPZlETxoA65Qe04FmoZtGwXtUxCgEEdcoPacSRHK3IO1ahC5NAFER/h7AQGhPiNNmWyC+dBHXKD2nEkF5DI0Xri0jmC6i30jODs0WilFyAqmImJyoQV/HA2cs5FBqRG8aAOuUHtOJRCmBatWWIALnsHdcgNascxIgfpazsVuITooTtYNRBT8BIDkHMuMkB2w6AOuUHtOJTcenfKKgQHKdhxReWug4Sj2M0ee/QhA2TzRZHsHdQhN6gdx0hqEwhXVNblpsDZTZPnYFVDTBRbjEYrFQBKbiUm9yFHHzJArhPrclP+Y1WEI7pxgUEdcoPacSjNIuSciwtQ0pQi1fxBHXKD2nEAdJVgOpR+ZmUAAAAASUVORK5CYII=" x="-19.5" y="200" width="39" height="36"/>
+          <line x1="-250" y1="-44" x2="-250" y2="248" stroke="var(--bad)" stroke-width="2" opacity=".5"/>
+          <line x1="250" y1="-44" x2="250" y2="248" stroke="var(--bad)" stroke-width="2" opacity=".5"/>
+          <text id="status" x="-240" y="60" font-family="var(--f-body)" font-weight="700" font-size="14"></text>
+        </svg>
+      </div>
+      <div class="controls">
+        <div class="ctl"><label for="count">count (boucliers)</label><output id="oCount">3</output><input id="count" type="range" min="1" max="5" step="1" value="3"></div>
+        <div class="ctl"><label for="gap">SHIELD_GAP</label><output id="oGap">100</output><input id="gap" type="range" min="40" max="200" step="10" value="100"></div>
+        <div class="ctl"><label for="cols">SHIELD_COLS</label><output id="oCols">3</output><input id="cols" type="range" min="1" max="5" step="1" value="3"></div>
+        <div class="ctl"><label for="rows">SHIELD_ROWS</label><output id="oRows">2</output><input id="rows" type="range" min="1" max="3" step="1" value="2"></div>
+      </div>
+      <div class="bar">
+        <div class="seg" role="group" aria-label="Point de départ du mur">
+          <button type="button" data-mode="fixe" aria-pressed="false">Départ −100</button>
+          <button type="button" data-mode="centre" aria-pressed="true">Centré</button>
+        </div>
+        <button class="btn go" id="buildBtn" type="button">▶ Construire</button>
+      </div>
+      <div class="readout">
+        <div class="chip c-k"><span class="k">k · bouclier</span><span class="v" id="vk">–</span></div>
+        <div class="chip c-r"><span class="k">row · rangée</span><span class="v" id="vr">–</span></div>
+        <div class="chip c-c"><span class="k">col · colonne</span><span class="v" id="vc">–</span></div>
+      </div>
+    </div>
+
+    <div class="steps-col">
+      <div class="steps" id="steps">
+        <section class="step">
+          <div class="step-head"><span class="num">1</span><h2>Une tuile</h2></div>
+          <p>Un bouclier n'est pas une seule image : c'est un petit tas de <span class="sw">tuiles</span> de <b>24 × 24</b> pixels. Chaque tuile peut être abîmée séparément, comme une brique.</p>
+          <p>Dans Codesters, la position d'un sprite, c'est <b>son centre</b>. Deux tuiles collées l'une à l'autre ont donc leurs centres à exactement <b>24 pixels</b> d'écart. C'est notre constante <span class="mono">TILE</span>.</p>
+          <div class="card"><p>Appuie sur <b>▶ Construire</b> : les tuiles apparaissent une par une, dans l'ordre où le programme les crée.</p></div>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">2</span><h2>Une rangée : col</h2></div>
+          <p>Pour poser une rangée, on compte les colonnes avec <span class="cw">col</span> : 0, 1, 2… À chaque tour, on décale la tuile de <span class="mono">TILE</span> pixels.</p>
+          <p>Mais on veut que le bouclier soit <b>centré sur x</b>. Avec 3 colonnes, on retire 1 à <span class="cw">col</span> :</p>
+          <div class="card tbl-wrap">
+            <table>
+              <thead><tr><th>col</th><th>col − 1</th><th>tile_x</th></tr></thead>
+              <tbody>
+                <tr><td class="m cw">0</td><td class="m">−1</td><td class="m">x − 24</td></tr>
+                <tr><td class="m cw">1</td><td class="m">0</td><td class="m">x</td></tr>
+                <tr><td class="m cw">2</td><td class="m">1</td><td class="m">x + 24</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="say">La tuile du milieu est pile sur x, les deux autres sont de chaque côté.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">3</span><h2>Un bouclier : row et col</h2></div>
+          <p>Pour faire plusieurs rangées, on met la boucle de <span class="cw">col</span> <b>à l'intérieur</b> d'une boucle de <span class="rw">row</span>. Pour chaque rangée, on refait toute la rangée de colonnes.</p>
+          <pre class="code" id="code3"></pre>
+          <p class="say">Attention à remettre <span class="cw">col</span> à 0 au début de chaque rangée, sinon la deuxième rangée ne fait rien.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">4</span><h2>Le mur : k</h2></div>
+          <p><span class="mono">build_wall</span> appelle <span class="mono">build_shield</span> plusieurs fois. Le compteur <span class="kw">k</span> dit quel bouclier on construit, et chaque bouclier est décalé de <span class="mono">SHIELD_GAP</span> :</p>
+          <div class="card formula"><span>centre du bouclier <span class="kw">k</span> = start_x + <span class="kw">k</span> × SHIELD_GAP</span></div>
+          <p>Lance <b>▶ Construire</b> et regarde les trois compteurs en bas : <span class="cw">col</span> change le plus vite, puis <span class="rw">row</span>, et <span class="kw">k</span> le plus lentement. Comme les chiffres d'un compteur kilométrique.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">5</span><h2>Le piège du −100</h2></div>
+          <p>Première idée : faire partir le mur de <b>x = −100</b>. Avec 3 boucliers et un écart de 100, ça tombe juste : −100, 0, 100.</p>
+          <p>Choisis <b>Départ −100</b>, puis bouge <span class="mono">SHIELD_GAP</span> : le mur <span class="bw">part vers la droite</span>. Le trait rose (centre du mur) s'éloigne du centre de l'écran.</p>
+          <div class="card tbl-wrap">
+            <table>
+              <thead><tr><th>SHIELD_GAP</th><th>Boucliers</th><th>Centre du mur</th></tr></thead>
+              <tbody>
+                <tr><td class="m">100</td><td class="m">−100, 0, 100</td><td class="m sw">0 ✓</td></tr>
+                <tr><td class="m">150</td><td class="m">−100, 50, 200</td><td class="m bw">50 ✗</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="say">Le −100 n'était juste que pour un écart de 100.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">6</span><h2>Partir du centre</h2></div>
+          <p>Au lieu de deviner le départ, on le <b>calcule</b> à partir du centre. Le mur mesure <span class="mono">(count − 1) × SHIELD_GAP</span> d'un bouclier à l'autre. On recule de la moitié :</p>
+          <div class="card formula">
+            <span>start_x = center_x − (count − 1) × SHIELD_GAP ÷ 2</span>
+            <span>start_x = 0 − (<span id="s6c">2</span>) × <span id="s6g">100</span> ÷ 2 = <span class="sw" id="s6r">−100</span></span>
+          </div>
+          <p>Même astuce pour centrer les tuiles, quel que soit le nombre de colonnes :</p>
+          <div class="card formula"><span>tile_x = x + (<span class="cw">col</span> − (SHIELD_COLS − 1) ÷ 2) × TILE</span></div>
+          <p class="say">Choisis Centré et bouge tous les curseurs : le mur reste toujours au milieu.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">7</span><h2>Dans Codesters</h2></div>
+          <p><span class="mono">build_shield</span> reste celle de l'étape 3, avec la ligne <span class="mono">tile_x</span> de l'étape 6 si on veut pouvoir changer le nombre de colonnes. Le mur, lui, part du centre :</p>
+          <pre class="code" id="code7"></pre>
+          <p class="say">Change SHIELD_GAP ou count : le mur reste au milieu, sans toucher à rien d'autre.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">★</span><h2>Défi : le premier bouclier</h2></div>
+          <div class="card">
+            <p style="margin:0 0 12px" id="qtext"></p>
+            <div class="opts" id="opts"></div>
+            <p class="feedback" id="qfb" aria-live="polite"></p>
+            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+              <button class="btn" id="qnext" type="button">Question suivante</button>
+              <span class="score" id="qscore">Score : 0 / 0</span>
+            </div>
+          </div>
+        </section>
+      </div>
+      <nav class="stepnav" id="stepnav" aria-label="Étapes">
+        <button class="btn arrow" id="prevStep" type="button" aria-label="Étape précédente" title="Précédent">←</button>
+        <span id="picks" style="display:flex;gap:6px;flex-wrap:wrap"></span>
+        <button class="btn arrow" id="nextStep" type="button" aria-label="Étape suivante" title="Suivant">→</button>
+      </nav>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const TILE_IMG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAQElEQVR4nGNc9X/ffwYaAiZaGk4XC1iQORvu7qKKoefmHIGzh34QjVowasGoBaMWjFowJCxAqdGQayJqgaEfRADPqQo9O0Zu1gAAAABJRU5ErkJggg==", ALIEN1 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACcAAAAeCAYAAACv1gdQAAAA/0lEQVR4nGNkoBIQEVL6D2O/eXePkRpmMlHDEFqBQe04ioIfOSqb7nXAxeuUKuBsSqJ4UIfcoHYcI6m5DFm90TYfghac89oCZ5Nq/qAOuUHtOBZkDq4oxhWVARo2hG3YhmCe89pC0HxkMKhDblA7jhFXlCHnMmJyJakAl/nI4oM65Aa141hwSeAK6tenVMi2TNTsDlbzcYFBHXKD2nEsyIUhciFJTLAjRxNydOMSxwVw1b+DOuQGteNwNmFIbRqRCohpSg3qkBvUjiOq84EcxSIFiNz3ZsIdrOpR9OJQT0yreFCH3KB2HFHRqtHkBo/WG3W7yO6HkmrOoA65Qe04ADnSYetD80Y3AAAAAElFTkSuQmCC", ALIEN2 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACcAAAAeCAYAAACv1gdQAAAA/UlEQVR4nGNkoBIQEVL6D2O/eXePkRpmMlHDEFqBQe04ioIfOSqb7nXAxeuUKuBsSqJ4UIfcoHYcyUGOHJVG23wIqj/ntQXOJjWKB3XIDWrHsSBzcBWkuKIyQMOGsA3bEMxzXlsImo8sPqhDblA7jhFXlCHnMmJyJakAl/nI4oM65Aa141hwSeAK6tenVMi2TNTsDlbzcYFBHXKD2nE4oxU5KnEB5GhCjm5c4rjMxxXFgzrkBrXjGEmtT6kFcDWlkO0d1CE3qB1HVMsUOahFChC5782EO1jVo+jFoZ6YVvGgDrlB7TicQavR5AaPyht1u6gyvECq+YM65Aa14wDmbl4z9L4dEgAAAABJRU5ErkJggg==";
+  const $ = id => document.getElementById(id);
+  const NS = 'http://www.w3.org/2000/svg';
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const TILE = 24, WALL_Y = -150;
+  const fr = n => { let s = (Math.round(n * 10) / 10).toString().replace('.', ',').replace(/^-/, '−'); return s === '−0' ? '0' : s; };
+
+  // décor : étoiles, règle, aliens
+  let st = '', seed = 11; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+  for (let i = 0; i < 70; i++) st += `<rect x="${(rnd() * 500 - 250).toFixed(0)}" y="${(rnd() * 290 - 44).toFixed(0)}" width="${rnd() < .2 ? 2 : 1}" height="${rnd() < .2 ? 2 : 1}" fill="#cfd6ff" opacity="${(.3 + rnd() * .6).toFixed(2)}"/>`;
+  $('stars').innerHTML = st;
+  let ru = '<line x1="-250" y1="-14" x2="250" y2="-14" stroke="var(--line)" stroke-width="2"/>';
+  for (let x = -250; x <= 250; x += 50) ru += `<line x1="${x}" y1="-18" x2="${x}" y2="-10" stroke="var(--muted)" stroke-width="1.5"/><text x="${x}" y="-24" text-anchor="middle" font-family="var(--f-mono)" font-size="10" fill="var(--muted)">${fr(x)}</text>`;
+  $('ruler').innerHTML = ru;
+  let al = '';
+  for (let i = 0; i < 9; i++) al += `<image href="${i % 2 ? ALIEN2 : ALIEN1}" x="${-200 + i * 50 - 18}" y="6" width="36" height="30"/>`;
+  $('aliens').innerHTML = al;
+
+  let count = 3, gap = 100, cols = 3, rows = 2, mode = 'centre';
+  let tiles = [], shown = Infinity, timer = null;
+
+  function startX() { return mode === 'fixe' ? -100 : 0 - (count - 1) * gap / 2; }
+  function compute() {
+    tiles = [];
+    const sx = startX();
+    let k = 0;
+    while (k < count) {
+      const x = sx + k * gap;
+      let row = 0;
+      while (row < rows) {
+        let col = 0;
+        while (col < cols) {
+          const off = mode === 'fixe' && cols === 3 ? col - 1 : col - (cols - 1) / 2;
+          tiles.push({ k, row, col, x: x + off * TILE, y: WALL_Y + row * TILE, cx: x });
+          col++;
+        }
+        row++;
+      }
+      k++;
+    }
+  }
+
+  function render() {
+    const g = $('tiles'); g.innerHTML = '';
+    tiles.forEach((t, i) => {
+      if (i >= shown) return;
+      const im = document.createElementNS(NS, 'image');
+      im.setAttribute('href', TILE_IMG); im.setAttribute('x', t.x - 12); im.setAttribute('y', -t.y - 12); im.setAttribute('width', 24); im.setAttribute('height', 24);
+      g.appendChild(im);
+    });
+    // repères des centres de boucliers
+    let mk = '';
+    const sx = startX();
+    for (let k = 0; k < count; k++) {
+      const x = sx + k * gap, y = -(WALL_Y) + 26;
+      mk += `<path d="M${x} ${y} l-6 9 h12 Z" fill="var(--k)"/><text x="${x}" y="${y + 22}" text-anchor="middle" font-family="var(--f-mono)" font-size="11" font-weight="600" fill="var(--k)">k=${k}</text>`;
+    }
+    $('markers').innerHTML = mk;
+    const wc = sx + (count - 1) * gap / 2;
+    $('wallCenter').setAttribute('x1', wc); $('wallCenter').setAttribute('x2', wc);
+
+    // état
+    const minX = Math.min(...tiles.map(t => t.x)) - 12, maxX = Math.max(...tiles.map(t => t.x)) + 12;
+    const overlap = count > 1 && gap < cols * TILE;
+    const out = minX < -250 || maxX > 250;
+    let msg, ok = false;
+    if (Math.abs(wc) > 0.01) msg = `Mur décalé de ${wc > 0 ? '+' : ''}${fr(wc)} px ✗`;
+    else if (overlap) msg = 'Les boucliers se chevauchent ✗';
+    else if (out) msg = 'Le mur sort de l\'écran ✗';
+    else { msg = 'Mur centré ✓'; ok = true; }
+    $('status').textContent = msg; $('status').setAttribute('fill', ok ? 'var(--shield)' : 'var(--bad)');
+
+    // tuile courante
+    const cur = shown >= 1 && shown <= tiles.length && timer ? tiles[shown - 1] : null;
+    if (cur) {
+      $('cursor').setAttribute('x', cur.x - 14); $('cursor').setAttribute('y', -cur.y - 14); $('cursor').setAttribute('visibility', 'visible');
+      const txt = 'tile_x = ' + fr(cur.x), w = 14 + txt.length * 7.3, ly = -cur.y - 34;
+      $('curTxt').textContent = txt; $('curTxt').setAttribute('x', Math.max(-200, Math.min(200, cur.x))); $('curTxt').setAttribute('y', ly);
+      $('curBg').setAttribute('x', Math.max(-200, Math.min(200, cur.x)) - w / 2); $('curBg').setAttribute('y', ly - 10); $('curBg').setAttribute('width', w); $('curBg').setAttribute('height', 20);
+      $('curLabel').setAttribute('visibility', 'visible');
+      $('vk').textContent = cur.k; $('vr').textContent = cur.row; $('vc').textContent = cur.col;
+    } else {
+      $('cursor').setAttribute('visibility', 'hidden'); $('curLabel').setAttribute('visibility', 'hidden');
+      $('vk').textContent = '0→' + (count - 1); $('vr').textContent = '0→' + (rows - 1); $('vc').textContent = '0→' + (cols - 1);
+    }
+
+    $('s6c').textContent = fr(count - 1); $('s6g').textContent = gap; $('s6r').textContent = fr(-(count - 1) * gap / 2);
+  }
+
+  function stop() { if (timer) { clearInterval(timer); timer = null; } $('buildBtn').textContent = '▶ Construire'; shown = Infinity; }
+  function rebuild() { stop(); compute(); render(); }
+  $('buildBtn').addEventListener('click', () => {
+    if (timer) { stop(); render(); return; }
+    compute(); shown = 0; $('buildBtn').textContent = '■ Stop';
+    timer = setInterval(() => {
+      shown++;
+      if (shown > tiles.length) { stop(); }
+      render();
+    }, reduce ? 120 : 260);
+    render();
+  });
+  [['count', 'oCount', v => count = v], ['gap', 'oGap', v => gap = v], ['cols', 'oCols', v => cols = v], ['rows', 'oRows', v => rows = v]].forEach(([id, o, set]) => {
+    $(id).addEventListener('input', e => { set(+e.target.value); $(o).textContent = e.target.value; rebuild(); });
+  });
+  document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => {
+    mode = b.dataset.mode; document.querySelectorAll('.seg button').forEach(x => x.setAttribute('aria-pressed', x === b)); rebuild();
+  }));
+
+  // ----- code -----
+  $('code3').innerHTML =
+`<span class="kwd">def</span> <span class="fn">build_shield</span>(x, y):
+    tiles = []
+    <span class="cr">row</span> = <span class="nb">0</span>
+    <span class="kwd">while</span> <span class="cr">row</span> &lt; SHIELD_ROWS:
+        <span class="cc">col</span> = <span class="nb">0</span>                <span class="cm"># on recommence la rangée</span>
+        <span class="kwd">while</span> <span class="cc">col</span> &lt; SHIELD_COLS:
+            tile_x = x + (<span class="cc">col</span> - <span class="nb">1</span>) * TILE
+            tile_y = y + <span class="cr">row</span> * TILE
+            tiles.<span class="fn">append</span>(codesters.Sprite(<span class="nb">"shield_full"</span>, tile_x, tile_y))
+            <span class="cc">col</span> += <span class="nb">1</span>
+        <span class="cr">row</span> += <span class="nb">1</span>
+    <span class="kwd">return</span> tiles`;
+  $('code7').innerHTML =
+`<span class="kwd">def</span> <span class="fn">build_wall</span>(center_x, y, count):
+    wall = []
+    start_x = center_x - (count - <span class="nb">1</span>) * SHIELD_GAP / <span class="nb">2</span>
+    <span class="ck">k</span> = <span class="nb">0</span>
+    <span class="kwd">while</span> <span class="ck">k</span> &lt; count:
+        wall = wall + <span class="fn">build_shield</span>(start_x + <span class="ck">k</span> * SHIELD_GAP, y)
+        <span class="ck">k</span> += <span class="nb">1</span>
+    <span class="kwd">return</span> wall
+
+shield_tiles = <span class="fn">build_wall</span>(<span class="nb">0</span>, <span class="nb">-150</span>, <span class="nb">3</span>)`;
+
+  // ----- étapes -----
+  const steps = [...document.querySelectorAll('#steps .step')];
+  let cur = 0;
+  $('picks').innerHTML = steps.map((s, i) => `<button class="pick" type="button" data-i="${i}" aria-label="Étape ${s.querySelector('.num').textContent}">${s.querySelector('.num').textContent}</button>`).join('');
+  function showStep(i, anim = true) {
+    cur = Math.max(0, Math.min(steps.length - 1, i));
+    steps.forEach((s, k) => { s.hidden = k !== cur; s.classList.remove('enter'); });
+    if (anim && !reduce) { void steps[cur].offsetWidth; steps[cur].classList.add('enter'); }
+    $('picks').querySelectorAll('.pick').forEach((b, k) => { if (k === cur) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current'); });
+    $('prevStep').disabled = cur === 0; $('nextStep').disabled = cur === steps.length - 1;
+  }
+  $('picks').addEventListener('click', e => { const b = e.target.closest('.pick'); if (b) showStep(+b.dataset.i); });
+  $('prevStep').addEventListener('click', () => showStep(cur - 1));
+  $('nextStep').addEventListener('click', () => showStep(cur + 1));
+  document.addEventListener('keydown', e => {
+    if (e.target.closest('input')) return;
+    if (e.key === 'ArrowRight') showStep(cur + 1); if (e.key === 'ArrowLeft') showStep(cur - 1);
+  });
+
+  // ----- défi -----
+  let q = null, answered = false, score = 0, total = 0, last = '';
+  function nextQ() {
+    let c, g;
+    do { c = 2 + Math.floor(Math.random() * 4); g = 60 + 20 * Math.floor(Math.random() * 6); } while (c + '-' + g === last);
+    last = c + '-' + g; answered = false;
+    const ans = -(c - 1) * g / 2;
+    const cand = [ans, -c * g / 2, -(c - 1) * g, -100, -g, -(c - 1) * g / 2 + g];
+    const opts = [];
+    cand.forEach(v => { if (!opts.includes(v) && opts.length < 4) opts.push(v); });
+    while (opts.length < 4) { const v = ans - 10 * (opts.length + 1); if (!opts.includes(v)) opts.push(v); }
+    q = { c, g, ans };
+    $('qtext').innerHTML = `Un mur de <b>${c}</b> boucliers, <span class="mono">SHIELD_GAP = ${g}</span>, centré sur <b>x = 0</b>. Où est le centre du <b>premier</b> bouclier ?`;
+    $('opts').innerHTML = opts.sort(() => Math.random() - .5).map(v => `<button class="opt" type="button" data-v="${v}">${fr(v)}</button>`).join('');
+    $('qfb').textContent = '';
+  }
+  $('opts').addEventListener('click', e => {
+    const b = e.target.closest('.opt'); if (!b || answered) return;
+    answered = true; total++;
+    const ok = +b.dataset.v === q.ans; if (ok) score++;
+    $('opts').querySelectorAll('.opt').forEach(o => { o.disabled = true; if (+o.dataset.v === q.ans) o.classList.add('ok'); else if (o === b) o.classList.add('ko'); });
+    $('qfb').textContent = (ok ? 'Bien vu ! ' : 'Pas tout à fait. ') + `0 − (${q.c} − 1) × ${q.g} ÷ 2 = ${fr(q.ans)}.`;
+    $('qfb').style.color = ok ? 'var(--shield)' : 'var(--bad)';
+    $('qscore').textContent = `Score : ${score} / ${total}`;
+  });
+  $('qnext').addEventListener('click', nextQ);
+
+  // ----- hauteur : pas de défilement à droite -----
+  const deskMQ = window.matchMedia('(min-width: 901px)');
+  function fitHeight() {
+    const col = document.querySelector('.stage-col');
+    col.style.minHeight = '';
+    if (!deskMQ.matches) return;
+    const box = $('steps'); let max = 0;
+    steps.forEach((s, k) => { steps.forEach((o, j) => o.hidden = j !== k); max = Math.max(max, box.scrollHeight); });
+    steps.forEach((o, j) => o.hidden = j !== cur);
+    col.style.minHeight = Math.ceil(max + 12 + $('stepnav').offsetHeight) + 'px';
+  }
+
+  compute(); render(); showStep(0, false); nextQ(); fitHeight();
+  window.addEventListener('resize', fitHeight);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitHeight);
+})();
+</script>

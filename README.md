@@ -54,12 +54,18 @@ Les boucliers sont faits de tuiles : on en assemble plusieurs, et à chaque impa
 
 ## `game_design_explained/`
 
-Des pages interactives à ouvrir dans le navigateur pour expliquer le jeu de tir aux élèves.
+Des pages interactives à ouvrir dans le navigateur pour expliquer les jeux aux élèves.
+
+### `topdown-shooter/`
 
 - `aim_explained.html` : **Viser un zombie** – comment `atan2` donne l'angle pour que le soldat regarde la cible.
 - `world_scrolling_explained.html` : **La carte qui glisse** – pourquoi l'hélico, les zombies et les balles doivent bouger en même temps que la map.
 - `muzzle_explained.html` : **Le bout du canon** – comment `cos` et `sin` font partir la balle du bout du fusil, quel que soit l'angle.
 - `side_offset_explained.html` : **Le pas de côté** – le petit décalage sur le côté quand le fusil n'est pas pile dans l'axe du soldat.
+
+### `space-invaders/`
+
+- `shield_wall_explained.html` : **Le mur de boucliers** – construire le mur tuile par tuile avec des `while` imbriqués, et le centrer quel que soit l'écart.
 
 ## `shooter_steps/`
 
