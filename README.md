@@ -47,6 +47,7 @@ Les images du remake de shoot'em up spatial, en pixel art. Les animations ont **
 | `explosion_1.png`, `explosion_2.png` | 39 × 33 | explosion |
 | `bouclier_intact.png`, `bouclier_abime.png`, `bouclier_casse.png` | 24 × 24 | une tuile de bouclier en 3 états |
 | `vie.png` | 26 × 24 | icône de vie |
+| `boss_1.png`, `boss_2.png` | 72 × 42 | le boss |
 | `fond_espace.png` | 500 × 500 | fond étoilé, à la taille de la scène |
 | `apercu.png`, `exemple_scene.png` | — | aperçus (pas utilisés dans le jeu) |
 
@@ -67,7 +68,11 @@ Des pages interactives à ouvrir dans le navigateur pour expliquer les jeux aux 
 
 - `shield_wall_explained.html` : **Le mur de boucliers** – construire le mur tuile par tuile avec des `while` imbriqués, et le centrer quel que soit l'écart.
 - `alien_fleet_explained.html` : **La flotte d'aliens** – placer les aliens par rangée et colonne, et les ranger dans une liste pour les faire bouger et savoir lequel est touché.
+- `tick_explained.html` : **Le battement du jeu** – la fonction `tick()` : un seul `event_interval`, le compteur de tics et le modulo pour ce qui arrive de temps en temps.
 
-## `shooter_steps/`
+## `game_steps/`
 
-Le code du jeu de tir en 5 étapes (joueur, hélico, zombies, tir, victoire/défaite), chacune en version **base** et **bonus**. Le guide est dans `shooter_steps/README.md`.
+Le code des jeux étape par étape, chaque étape en version **base** et **bonus**. Chaque dossier a son propre guide (`README.md`).
+
+- `topdown-shooter/` : 5 étapes (joueur, hélico, zombies, tir, victoire/défaite).
+- `space-invaders/` : 6 étapes (joueur, aliens, tir, tirs ennemis et vies, protections, boss).

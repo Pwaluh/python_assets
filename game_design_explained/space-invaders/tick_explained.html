@@ -1,0 +1,469 @@
+<title>Le battement du jeu</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout : borne d'arcade, version oscilloscope ambre. Gauche = écran de jeu + réglages, droite = étapes une à une. Thème volontairement sombre (écran CRT). */
+:root {
+  --bg: #0a0c1c;
+  --bg2: #10142e;
+  --panel: #161b3d;
+  --line: #2b3266;
+  --ink: #e7ebff;
+  --muted: #8f97c7;
+  --shield: #ffb547;   /* le battement (accent) */
+  --k: #ff5fb4;        /* compteur k : quel bouclier */
+  --col: #59d6ff;      /* compteur col */
+  --row: #7ee07a;      /* le temps */
+  --bad: #ff5b5b;
+  --f-display: "Press Start 2P", "Courier New", monospace;
+  --f-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "Consolas", monospace;
+  color-scheme: dark;
+}
+
+html { background: var(--bg); }
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--f-body); font-size: 17px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 48px;
+  min-height: 100vh;
+  background-attachment: fixed;
+  background-image:
+    radial-gradient(ellipse at 20% 0%, rgba(255, 181, 71, .07), transparent 55%),
+    radial-gradient(ellipse at 90% 100%, rgba(255, 95, 180, .07), transparent 50%);
+}
+.wrap { max-width: 1180px; margin: 0 auto; }
+@media (min-width: 1400px) { .wrap { max-width: 1400px; } }
+
+header { display: grid; gap: 10px; margin-bottom: 24px; max-width: 62ch; }
+.eyebrow { font-family: var(--f-mono); font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(22px, 4.2vw, 38px); line-height: 1.2; margin: 0; color: var(--ink); text-shadow: 0 0 18px rgba(255, 181, 71, .25); }
+h1 .o { color: var(--shield); }
+.lede { margin: 0; font-size: 18px; color: var(--muted); }
+.lede b { color: var(--ink); }
+@media (min-width: 901px) {
+  body { padding-block: 22px; }
+  body header { max-width: none; display: flex; flex-wrap: wrap; align-items: flex-end; column-gap: 48px; row-gap: 8px; margin-bottom: 22px; }
+  body header .eyebrow { flex: 1 0 100%; }
+  body header h1 { flex: none; }
+  body header .lede { flex: 1 1 420px; max-width: 640px; min-width: 0; font-size: 17px; line-height: 1.5; }
+}
+
+.layout { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 36px; align-items: start; }
+@media (max-width: 900px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+/* --- écran --- */
+.stage-col { display: grid; gap: 12px; min-width: 0; }
+.screen { position: relative; border: 3px solid var(--line); border-radius: 14px; overflow: hidden; background: #05061a; box-shadow: 0 0 0 6px var(--bg2), 0 0 40px rgba(255, 181, 71, .12); max-width: 100%; }
+.screen::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(255,255,255,.035) 0 1px, transparent 1px 3px); }
+.screen svg { display: block; width: 100%; height: auto; }
+.screen image { image-rendering: pixelated; }
+.controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 18px; }
+@media (max-width: 520px) { .controls { grid-template-columns: minmax(0, 1fr); } }
+.ctl { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 2px 10px; font-size: 14px; }
+.ctl label { font-family: var(--f-mono); font-size: 13px; color: var(--muted); }
+.ctl output { font-family: var(--f-mono); font-weight: 600; font-size: 14px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.ctl input { grid-column: 1 / -1; width: 100%; accent-color: var(--shield); }
+.ctl input:focus-visible { outline: 2px solid var(--shield); outline-offset: 3px; }
+.bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.seg { display: inline-flex; border: 2px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { font: inherit; font-size: 14px; font-weight: 700; padding: 6px 12px; border: 0; border-right: 2px solid var(--line); background: var(--bg2); color: var(--muted); cursor: pointer; }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--shield); color: #1a1003; }
+.btn { font: inherit; font-size: 14px; font-weight: 700; background: var(--panel); color: var(--ink); border: 2px solid var(--line); border-radius: 8px; padding: 6px 14px; cursor: pointer; }
+.btn:hover { border-color: var(--shield); }
+.btn.go { background: var(--shield); color: #1a1003; border-color: var(--shield); }
+.btn:focus-visible, .seg button:focus-visible, .opt:focus-visible { outline: 2px solid var(--shield); outline-offset: 2px; }
+.readout { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.chip { background: var(--panel); border: 2px solid var(--line); border-radius: 10px; padding: 8px 12px; display: grid; align-content: center; min-width: 0; min-height: 70px; }
+.chip .k { font-family: var(--f-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chip .v { font-family: var(--f-display); font-size: 18px; line-height: 1.6; white-space: nowrap; }
+.c-k .v { color: var(--k); } .c-r .v { color: var(--row); } .c-c .v { color: var(--col); }
+
+/* --- étapes --- */
+.steps-col { display: grid; gap: 20px; min-width: 0; }
+.steps { display: grid; min-width: 0; align-content: start; }
+.step { display: grid; gap: 12px; align-content: start; }
+.step[hidden] { display: none; }
+.step.enter { animation: enter .3s steps(4, end); }
+@keyframes enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.step-head { display: flex; align-items: baseline; gap: 14px; }
+.num { font-family: var(--f-display); font-size: 26px; line-height: 1; color: var(--shield); min-width: 1.4ch; }
+h2 { font-family: var(--f-display); font-weight: 400; font-size: 16px; line-height: 1.5; margin: 0; text-wrap: balance; }
+.step p { margin: 0; max-width: 62ch; }
+.kw { color: var(--k); font-weight: 700; } .cw { color: var(--col); font-weight: 700; } .rw { color: var(--row); font-weight: 700; } .sw { color: var(--shield); font-weight: 700; } .bw { color: var(--bad); font-weight: 700; }
+.card { background: var(--panel); border: 2px solid var(--line); border-radius: 10px; padding: 14px 16px; min-width: 0; }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.formula { font-family: var(--f-mono); font-size: 15.5px; display: grid; gap: 4px; overflow-x: auto; font-variant-numeric: tabular-nums; }
+.say { font-style: italic; color: var(--muted); }
+.tbl-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 5px 10px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--f-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 400; }
+td.m { font-family: var(--f-mono); font-weight: 600; white-space: nowrap; }
+pre.code { margin: 0; background: #05061a; color: var(--ink); border-radius: 10px; padding: 14px 16px; font-family: var(--f-mono); font-size: 13.5px; line-height: 1.65; overflow-x: auto; border: 2px solid var(--line); }
+.code .kwd { color: #c7a6ff; } .code .fn { color: var(--shield); } .code .cm { color: #6b739f; } .code .ck { color: var(--k); } .code .cr { color: var(--row); } .code .cc { color: var(--col); } .code .nb { color: #ffd88a; }
+
+.stepnav { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: space-between; background: var(--panel); border: 2px solid var(--line); border-radius: 10px; min-height: 70px; padding: 8px 10px; }
+.stepnav .pick { font-family: var(--f-display); font-size: 13px; width: 40px; height: 40px; border: 2px solid var(--line); border-radius: 8px; background: var(--bg2); color: var(--ink); cursor: pointer; display: grid; place-items: center; }
+.stepnav .pick:hover { border-color: var(--shield); }
+.stepnav .pick[aria-current="step"] { background: var(--shield); color: #1a1003; border-color: var(--shield); box-shadow: 0 0 14px rgba(255, 181, 71, .45); }
+.stepnav .pick:focus-visible { outline: 2px solid var(--shield); outline-offset: 2px; }
+.stepnav .arrow { width: 40px; height: 40px; padding: 0; font-size: 18px; display: grid; place-items: center; }
+.stepnav .btn:disabled { opacity: .35; cursor: default; }
+
+.opts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.opt { font-family: var(--f-mono); font-size: 18px; font-weight: 600; padding: 10px; border: 2px solid var(--line); border-radius: 8px; background: var(--bg2); color: var(--ink); cursor: pointer; font-variant-numeric: tabular-nums; }
+.opt:hover:not(:disabled) { border-color: var(--shield); }
+.opt.ok { background: var(--shield); color: #1a1003; border-color: var(--shield); }
+.opt.ko { text-decoration: line-through; opacity: .5; }
+.feedback { min-height: 1.6em; margin: 10px 0 0; font-weight: 700; }
+.score { font-size: 14px; color: var(--muted); }
+
+@media (min-width: 901px) {
+  .layout { align-items: stretch; }
+  .stage-col { display: flex; flex-direction: column; }
+  .readout { margin-top: auto; }
+  .steps-col { contain: size; display: flex; flex-direction: column; gap: 12px; }
+  .steps { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 8px; }
+  .stepnav { flex: none; }
+}
+@media (prefers-reduced-motion: reduce) { .step.enter { animation: none; } }
+.cmt { color: var(--muted); font-weight: 400; }
+.screen svg text { user-select: none; }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Atelier Python · Codesters · la boucle de jeu</span>
+    <h1>Le battement <span class="o">du jeu</span></h1>
+    <p class="lede">Un jeu, c'est un dessin animé : vingt fois par seconde, la fonction <b>tick()</b> du space invaders fait avancer un tout petit peu chaque chose. Tout ce qui bouge ou se répète passe par elle.</p>
+  </header>
+
+  <div class="layout">
+    <div class="stage-col">
+      <div class="screen">
+        <svg id="stage" viewBox="0 0 520 400" role="img" aria-label="Le métronome du jeu : les tics et ce qui se passe à chacun">
+          <rect width="520" height="400" fill="#05061a"/>
+          <g id="stars"></g>
+          <!-- la partition : une colonne par tic -->
+          <text x="12" y="20" font-family="var(--f-mono)" font-size="11" fill="var(--muted)">tick_count →</text>
+          <g id="roll"></g>
+          <g id="lanes"></g>
+          <line x1="0" y1="150" x2="520" y2="150" stroke="var(--line)" stroke-width="2"/>
+          <!-- le terrain -->
+          <g id="field"></g>
+          <text id="status" x="12" y="392" font-family="var(--f-body)" font-weight="700" font-size="13"></text>
+        </svg>
+      </div>
+      <div class="controls">
+        <div class="ctl"><label for="iv">event_interval (secondes)</label><output id="oIv">0,25</output><input id="iv" type="range" min="0.05" max="0.5" step="0.05" value="0.25"></div>
+        <div class="ctl"><label for="fd">fleet_delay() (tics)</label><output id="oFd">4</output><input id="fd" type="range" min="1" max="10" step="1" value="4"></div>
+      </div>
+      <div class="bar">
+        <div class="seg" role="group" aria-label="Combien d'event_interval ?">
+          <button type="button" data-mode="one" aria-pressed="true">Un seul tick()</button>
+          <button type="button" data-mode="two" aria-pressed="false">Deux event_interval</button>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn go" id="playBtn" type="button">❚❚ Pause</button>
+          <button class="btn" id="stepBtn" type="button">+1 tic</button>
+        </div>
+      </div>
+      <div class="readout">
+        <div class="chip c-c"><span class="k">tick_count</span><span class="v" id="vt">0</span></div>
+        <div class="chip c-k"><span class="k">tick_count % 25</span><span class="v" id="vm">0</span></div>
+        <div class="chip c-r"><span class="k">temps écoulé</span><span class="v" id="vs">0,0 s</span></div>
+      </div>
+    </div>
+
+    <div class="steps-col">
+      <div class="steps" id="steps">
+        <section class="step">
+          <div class="step-head"><span class="num">1</span><h2>Un dessin animé</h2></div>
+          <p>Un dessin animé, c'est plein d'images presque pareilles qui défilent vite. Un jeu fait pareil : à chaque <span class="sw">tic</span>, on bouge chaque objet d'un tout petit peu.</p>
+          <div class="card formula"><span>stage.event_interval(tick, <span class="sw">0.05</span>)</span></div>
+          <p>Ça veut dire : « appelle <span class="mono">tick()</span> toutes les 0,05 seconde », donc <b>20 fois par seconde</b>.</p>
+          <p class="say">Ici le jeu est ralenti à 0,25 s pour bien voir. Glisse le curseur à 0,05 : c'est la vitesse de nos jeux.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">2</span><h2>Compter les battements</h2></div>
+          <p>Au début de <span class="mono">tick()</span>, on ajoute 1 à <span class="cw">tick_count</span>. C'est l'horloge du jeu : elle dit combien de tics se sont passés depuis le début.</p>
+          <pre class="code" id="code2"></pre>
+          <p>Avec 20 tics par seconde, <span class="cw">tick_count</span> ÷ 20 donne le temps en secondes. Regarde les cases en bas.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">3</span><h2>À chaque tic : les petits pas</h2></div>
+          <p>Les tirs bougent à <b>chaque</b> tic, de quelques pixels. Comme les tics vont très vite, on voit un mouvement fluide.</p>
+          <div class="card formula">
+            <span>PLAYER_LASER_SPEED = 14   <span class="cmt"># pixels par tic</span></span>
+            <span>14 pixels × 20 tics = <span class="sw">280 pixels par seconde</span></span>
+          </div>
+          <p>Sur la partition, la ligne <span class="cw">move_lasers</span> est allumée à chaque colonne.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">4</span><h2>Pas à chaque fois : le modulo</h2></div>
+          <p>Certaines choses ne doivent arriver que <b>de temps en temps</b>. Si un alien tirait à chaque tic, il y aurait 20 tirs par seconde ! On utilise le reste de la division, <span class="mono">%</span> :</p>
+          <div class="card formula"><span><span class="cw">tick_count</span> % 25 == 0   <span class="cmt"># vrai à 25, 50, 75…</span></span></div>
+          <p>Regarde la case du milieu : elle compte 0, 1, 2… 24, puis revient à <b>0</b>. Chaque fois qu'elle vaut 0, la ligne <span class="kw">alien_fire</span> s'allume.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">5</span><h2>Une seule horloge</h2></div>
+          <p>On pourrait vouloir faire tirer les aliens avec leur propre horloge :</p>
+          <div class="card formula"><span>stage.event_interval(tick, 0.05)</span><span>stage.event_interval(alien_fire, 1.25)</span></div>
+          <p>Mais Codesters ne garde qu'<b>un seul</b> <span class="mono">event_interval</span> : le deuxième <span class="bw">remplace</span> le premier. Choisis <b>Deux event_interval</b> : les aliens tirent toujours, mais plus rien d'autre ne bouge.</p>
+          <p>La règle : <b>tout</b> ce qui se répète va dans <span class="mono">tick()</span>, avec le modulo pour choisir le rythme.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">6</span><h2>Changer le rythme</h2></div>
+          <p>Le modulo n'est pas obligé d'utiliser un nombre fixe. Dans le space invaders, la flotte avance tous les <span class="mono">fleet_delay()</span> tics, et ce nombre <b>diminue</b> quand il reste moins d'aliens :</p>
+          <div class="card formula"><span>fleet_delay() = 2 + len(invaders) // 5</span><span>40 aliens → 10 tics, 5 aliens → 3 tics</span></div>
+          <p>Bouge le curseur <span class="mono">fleet_delay()</span> : la flotte accélère sans qu'on touche à <span class="mono">event_interval</span>.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">7</span><h2>Dans nos jeux</h2></div>
+          <pre class="code" id="code7"></pre>
+          <p class="say">Toujours le même squelette : on compte, on bouge un peu à chaque tic, et on utilise le modulo pour tout ce qui arrive de temps en temps.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">★</span><h2>Défi : est-ce que ça arrive ?</h2></div>
+          <div class="card">
+            <p style="margin:0 0 12px" id="qtext"></p>
+            <div class="opts" id="opts"></div>
+            <p class="feedback" id="qfb" aria-live="polite"></p>
+            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+              <button class="btn" id="qnext" type="button">Question suivante</button>
+              <span class="score" id="qscore">Score : 0 / 0</span>
+            </div>
+          </div>
+        </section>
+      </div>
+      <nav class="stepnav" id="stepnav" aria-label="Étapes">
+        <button class="btn arrow" id="prevStep" type="button" aria-label="Étape précédente" title="Précédent">←</button>
+        <span id="picks" style="display:flex;gap:6px;flex-wrap:wrap"></span>
+        <button class="btn arrow" id="nextStep" type="button" aria-label="Étape suivante" title="Suivant">→</button>
+      </nav>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const ALIEN = ["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAAeCAYAAABE4bxTAAAA5klEQVR4nGNkIBGICCn9J0X9m3f3GElRz0Sac2gPBp2DcAYnrqjZUHWXJAsC2pSxiuOKykEXQoPOQSjBhhxNTXa74OJ6NtiDnVRw6QgiuusOucHZyNE36EJo0DmIhRhFhpnUsezSEcJqBl0IDToHseDKWcQAaWlZrOJPnz4mqBfZrrpDbnA3DLoQGnUQITDqIEKAqLrs3CNEiTbxcDxJFuTbLoSzjeRs4OzRuoxcQFSUUQvgiiZkMOhCaNA5CGcjP8VoAdZG/pxzCYzUVoMMBl0IDToHoQQbcvDiClJaqxl0ITToHAQApytRKmZ6J6YAAAAASUVORK5CYII=", "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAAeCAYAAABE4bxTAAAA60lEQVR4nGNkIBGICCn9J0X9m3f3GElRz0Sac2gPBp2DcAYnrqjZUHWXJAsC2pSxiuOKykEXQoPOQSjBhhxNTXa74OJ6NtiDnVRw6QgiuusOucHZyNE36EJo0DmIhRhFhpnUsezSEcJqBl0IDToHseDKWbiAtLQsVvGnTx+TZDGyXXWH3OBuGHQhNOogQmDUQYQAUXXZuUeIEm3i4XiSLMi3XQhnG8nZwNmjdRm5gKgooxbAFU3IYNCF0KBzEM5GforRAqyN/DnnEhiprQYZDLoQGnQOIqrFiCsKcAU7LjW4og8ZDLoQGnQOAgAaGU0tQ5LGcgAAAABJRU5ErkJggg=="], SHIP = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACcAAAAkCAYAAAAKNyObAAABMUlEQVR4nGNkoBIQEVL6D2O/eXePkRpmMlHDEFqBQe04ioIfOSqbDtyFi9c5KMPZlETxoA65Qe04FmoZtGwXtUxCgEEdcoPacSRHK3IO1ahC5NAFER/h7AQGhPiNNmWyC+dBHXKD2nEkF5DI0Xri0jmC6i30jODs0WilFyAqmImJyoQV/HA2cs5FBqRG8aAOuUHtOJRCmBatWWIALnsHdcgNascxIgfpazsVuITooTtYNRBT8BIDkHMuMkB2w6AOuUHtOJTcenfKKgQHKdhxReWug4Sj2M0ee/QhA2TzRZHsHdQhN6gdx0hqEwhXVNblpsDZTZPnYFVDTBRbjEYrFQBKbiUm9yFHHzJArhPrclP+Y1WEI7pxgUEdcoPacSjNIuSciwtQ0pQi1fxBHXKD2nEAdJVgOpR+ZmUAAAAASUVORK5CYII=", LASER = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAkAAAASCAYAAACJgPRIAAAAQElEQVR4nGNkQALP/v//D2NLMTIywthMDEQAohSxiAgp/ccmgSxOReuQOZMYPpJv0qgiBkZkDnJ8vXl3jwZJBQCziww41dbGUAAAAABJRU5ErkJggg==", ALASER = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAASCAYAAACEnoQPAAAAc0lEQVR4nGNkQAIiQkr/YezX2y7DxUW9dOHsN+/uMcLYTAwUAIo0s6A41WMZVkXI4qI7ouDqB9DZOGUmXcYpRRWbKdLMiMzBFfKiO6Lg7EGSSJA5yE5iYGD4j0OcOjZTL7T/R52AO5VxmQVWp1LNZoo0AwAhLCEdKYhxQAAAAABJRU5ErkJggg==";
+  const $ = id => document.getElementById(id);
+  const NS = 'http://www.w3.org/2000/svg';
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const fr = (n, d = 1) => n.toFixed(d).replace('.', ',');
+
+  // décor du terrain
+  let st = '', seed = 3; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+  for (let i = 0; i < 60; i++) st += `<rect x="${(rnd() * 520).toFixed(0)}" y="${(150 + rnd() * 250).toFixed(0)}" width="1" height="1" fill="#cfd6ff" opacity="${(.3 + rnd() * .6).toFixed(2)}"/>`;
+  $('stars').innerHTML = st;
+
+  // ----- partition -----
+  const COLS = 28, X0 = 132, CW = 13.4;
+  const LANES = [
+    { id: 'move', label: 'move_lasers', rule: 'chaque tic', color: 'var(--col)' },
+    { id: 'fleet', label: 'move_fleet', rule: '% fleet_delay', color: 'var(--shield)' },
+    { id: 'fire', label: 'alien_fire', rule: '% 25', color: 'var(--k)' },
+  ];
+  const LANE_Y = 40, LH = 32;
+  let lanes = '';
+  LANES.forEach((l, i) => {
+    const y = LANE_Y + i * LH;
+    lanes += `<text x="12" y="${y + 12}" font-family="var(--f-mono)" font-size="11.5" font-weight="600" fill="${l.color}">${l.label}</text>`;
+    lanes += `<text x="12" y="${y + 23}" font-family="var(--f-mono)" font-size="9.5" fill="var(--muted)">${l.rule}</text>`;
+  });
+  lanes += `<g id="spawnOff" visibility="hidden"><rect x="${X0 - 2}" y="${LANE_Y - 1}" width="${COLS * CW + 4}" height="${LH * 2 - 2}" fill="rgba(255,91,91,.14)" stroke="var(--bad)" stroke-dasharray="4 4"/><text x="${X0 + COLS * CW / 2}" y="${LANE_Y + LH + 4}" text-anchor="middle" font-family="var(--f-body)" font-weight="700" font-size="13" fill="var(--bad)">tick() remplacé par le 2e event_interval</text></g>`;
+  $('lanes').innerHTML = lanes;
+
+  let ivSec = 0.25, fleetDelay = 4, mode = 'one', playing = !reduce, timer = null;
+  let tc = 0, history = [];
+
+  // ----- terrain -----
+  const field = { aliens: [], dir: 1, lasers: [], alasers: [] };
+  function resetField() {
+    field.aliens = []; for (let i = 0; i < 6; i++) field.aliens.push({ x: 140 + i * 40, y: 190 });
+    field.dir = 1; field.lasers = []; field.alasers = [];
+  }
+  resetField();
+
+  function step() {
+    tc++;
+    const one = mode === 'one';
+    const fired = { move: one, fleet: one && tc % fleetDelay === 0, fire: tc % 25 === 0 };
+    history.push({ t: tc, f: fired }); if (history.length > COLS) history.shift();
+    // ce que fait tick() sur le terrain
+    if (one) {
+      if (tc % 6 === 0) field.lasers.push({ x: 260, y: 352 });
+      field.lasers.forEach(l => l.y -= 14);
+      field.lasers = field.lasers.filter(l => l.y > 160);
+      field.alasers.forEach(l => l.y += 6);
+      field.alasers = field.alasers.filter(l => l.y < 390);
+    }
+    if (fired.fleet) {
+      const edge = field.aliens.some(a => a.x + 10 * field.dir > 480 || a.x + 10 * field.dir < 40);
+      if (edge) { field.dir = -field.dir; field.aliens.forEach(a => a.y += 10); if (field.aliens[0].y > 250) field.aliens.forEach(a => a.y = 190); }
+      else field.aliens.forEach(a => a.x += 10 * field.dir);
+    }
+    if (fired.fire) { const a = field.aliens[Math.floor(Math.random() * field.aliens.length)]; field.alasers.push({ x: a.x, y: a.y + 14 }); }
+    draw();
+  }
+
+  function draw() {
+    // partition
+    let r = '';
+    const first = Math.max(1, tc - COLS + 1);
+    for (let i = 0; i < COLS; i++) {
+      const t = first + i, x = X0 + i * CW, h = history.find(e => e.t === t);
+      const isNow = t === tc;
+      if (t > tc) continue;
+      if (t % 5 === 0 || isNow) r += `<text x="${x + CW / 2}" y="20" text-anchor="middle" font-family="var(--f-mono)" font-size="9.5" fill="${isNow ? 'var(--ink)' : 'var(--muted)'}">${t}</text>`;
+      if (isNow) r += `<rect x="${x}" y="31" width="${CW}" height="${LH * 3 + 4}" fill="rgba(255,255,255,.08)" stroke="var(--ink)" stroke-width="1"/>`;
+      LANES.forEach((l, k) => {
+        const y = LANE_Y + k * LH;
+        const on = h && h.f[l.id];
+        r += `<rect x="${x + 2}" y="${y + 3}" width="${CW - 4}" height="${LH - 8}" rx="2" fill="${on ? l.color : 'var(--line)'}" opacity="${on ? 1 : .35}"/>`;
+      });
+    }
+    $('roll').innerHTML = r;
+    $('spawnOff').setAttribute('visibility', mode === 'two' ? 'visible' : 'hidden');
+
+    // terrain
+    let f = '';
+    const frame = Math.floor(tc / fleetDelay) % 2;
+    field.aliens.forEach(a => f += `<image href="${ALIEN[frame]}" x="${a.x - 18}" y="${a.y - 15}" width="36" height="30"/>`);
+    field.lasers.forEach(l => f += `<image href="${LASER}" x="${l.x - 4.5}" y="${l.y - 9}" width="9" height="18"/>`);
+    field.alasers.forEach(l => f += `<image href="${ALASER}" x="${l.x - 7.5}" y="${l.y - 9}" width="15" height="18"/>`);
+    f += `<image href="${SHIP}" x="240.5" y="350" width="39" height="36"/>`;
+    $('field').innerHTML = f;
+
+    const secs = tc * ivSec;
+    // en mode « deux event_interval », tick() n'est plus appelé : tick_count ne compte plus
+    $('vt').textContent = mode === 'two' ? '–' : tc; $('vm').textContent = mode === 'two' ? '–' : tc % 25; $('vs').textContent = fr(tc * 0.05) + ' s';
+    let msg = '', col = 'var(--muted)';
+    if (mode === 'two') { msg = 'Deux event_interval : tick() est effacé, seul alien_fire tourne'; col = 'var(--bad)'; }
+    else if (tc % 25 === 0 && tc) { msg = `tick_count % 25 == 0 → un alien tire`; col = 'var(--k)'; }
+    else { msg = `${fr(1 / ivSec, 0)} tics par seconde`; }
+    $('status').textContent = msg; $('status').setAttribute('fill', col);
+  }
+
+  function setPlaying(p) {
+    playing = p;
+    if (timer) { clearInterval(timer); timer = null; }
+    if (playing) timer = setInterval(step, ivSec * 1000);
+    $('playBtn').textContent = playing ? '❚❚ Pause' : '▶ Lecture';
+  }
+  $('playBtn').addEventListener('click', () => setPlaying(!playing));
+  $('stepBtn').addEventListener('click', () => { setPlaying(false); step(); });
+  $('iv').addEventListener('input', e => { ivSec = +e.target.value; $('oIv').textContent = fr(ivSec, 2); if (playing) setPlaying(true); draw(); });
+  $('fd').addEventListener('input', e => { fleetDelay = +e.target.value; $('oFd').textContent = fleetDelay; });
+  document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => {
+    mode = b.dataset.mode; document.querySelectorAll('.seg button').forEach(x => x.setAttribute('aria-pressed', x === b)); draw();
+  }));
+
+  // ----- code -----
+  $('code2').innerHTML =
+`tick_count = <span class="nb">0</span>
+
+<span class="kwd">def</span> <span class="fn">tick</span>():
+    <span class="kwd">global</span> tick_count
+    <span class="cc">tick_count</span> += <span class="nb">1</span>     <span class="cm"># un battement de plus</span>
+    ...
+
+stage.<span class="fn">event_interval</span>(tick, <span class="nb">0.05</span>)`;
+  $('code7').innerHTML =
+`<span class="kwd">def</span> <span class="fn">tick</span>():
+    <span class="kwd">global</span> tick_count
+    <span class="cc">tick_count</span> += <span class="nb">1</span>
+    <span class="fn">move_lasers</span>()                         <span class="cm"># chaque tic</span>
+    <span class="kwd">if</span> <span class="fn">len</span>(invaders) &gt; <span class="nb">0</span> <span class="kwd">and</span> <span class="cc">tick_count</span> % <span class="fn">fleet_delay</span>() == <span class="nb">0</span>:
+        <span class="fn">move_fleet</span>()                      <span class="cm"># de plus en plus vite</span>
+    <span class="kwd">if</span> <span class="fn">len</span>(invaders) &gt; <span class="nb">0</span> <span class="kwd">and</span> <span class="cc">tick_count</span> % ALIEN_FIRE_EVERY == <span class="nb">0</span>:
+        <span class="fn">alien_fire</span>()                      <span class="cm"># tous les 25 tics</span>
+    <span class="kwd">if</span> boss_is_alive:
+        <span class="fn">move_boss</span>()
+        <span class="kwd">if</span> <span class="cc">tick_count</span> % BOSS_FIRE_EVERY == <span class="nb">0</span>:
+            <span class="fn">boss_fire</span>()                   <span class="cm"># tous les 30 tics</span>
+
+stage.<span class="fn">event_interval</span>(tick, <span class="nb">0.05</span>)   <span class="cm"># UN SEUL</span>`;
+
+  // ----- étapes -----
+  const steps = [...document.querySelectorAll('#steps .step')];
+  let cur = 0;
+  $('picks').innerHTML = steps.map((s, i) => `<button class="pick" type="button" data-i="${i}" aria-label="Étape ${s.querySelector('.num').textContent}">${s.querySelector('.num').textContent}</button>`).join('');
+  function showStep(i, anim = true) {
+    cur = Math.max(0, Math.min(steps.length - 1, i));
+    steps.forEach((s, k) => { s.hidden = k !== cur; s.classList.remove('enter'); });
+    if (anim && !reduce) { void steps[cur].offsetWidth; steps[cur].classList.add('enter'); }
+    $('picks').querySelectorAll('.pick').forEach((b, k) => { if (k === cur) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current'); });
+    $('prevStep').disabled = cur === 0; $('nextStep').disabled = cur === steps.length - 1;
+  }
+  $('picks').addEventListener('click', e => { const b = e.target.closest('.pick'); if (b) showStep(+b.dataset.i); });
+  $('prevStep').addEventListener('click', () => showStep(cur - 1));
+  $('nextStep').addEventListener('click', () => showStep(cur + 1));
+  document.addEventListener('keydown', e => {
+    if (e.target.closest('input')) return;
+    if (e.key === 'ArrowRight') showStep(cur + 1); if (e.key === 'ArrowLeft') showStep(cur - 1);
+  });
+
+  // ----- défi -----
+  let q = null, answered = false, score = 0, total = 0, lastKind = -1;
+  function nextQ() {
+    answered = false;
+    let kind; do { kind = Math.floor(Math.random() * 3); } while (kind === lastKind); lastKind = kind;
+    if (kind === 0) {
+      const n = [20, 25, 10, 8][Math.floor(Math.random() * 4)], t = n * (1 + Math.floor(Math.random() * 5)) + (Math.random() < .5 ? 0 : 1 + Math.floor(Math.random() * (n - 1)));
+      const yes = t % n === 0;
+      q = { text: `<span class="mono">tick_count = ${t}</span>. Est-ce que <span class="mono">tick_count % ${n} == 0</span> ?`, ans: yes ? 'Oui' : 'Non', opts: ['Oui', 'Non'], why: `${t} ÷ ${n} = ${Math.floor(t / n)}, reste ${t % n}.` };
+    } else if (kind === 1) {
+      const s = 2 + Math.floor(Math.random() * 5), ans = s * 20;
+      q = { text: `Avec <span class="mono">event_interval(tick, 0.05)</span>, combien de fois <span class="mono">tick()</span> est-il appelé en <b>${s} secondes</b> ?`, ans: String(ans), opts: [String(ans), String(s * 5), String(s * 10), String(s * 50)], why: `20 tics par seconde × ${s} secondes = ${ans}.` };
+    } else {
+      const v = [5, 6, 10, 14][Math.floor(Math.random() * 4)], ans = v * 20;
+      q = { text: `Un tir avance de <b>${v} pixels par tic</b>, avec 20 tics par seconde. Combien de pixels par seconde ?`, ans: String(ans), opts: [String(ans), String(v * 2), String(v + 20), String(v * 10)], why: `${v} × 20 = ${ans} pixels par seconde.` };
+    }
+    $('qtext').innerHTML = q.text;
+    $('opts').innerHTML = [...new Set(q.opts)].sort(() => Math.random() - .5).map(v => `<button class="opt" type="button">${v}</button>`).join('');
+    $('qfb').textContent = '';
+  }
+  $('opts').addEventListener('click', e => {
+    const b = e.target.closest('.opt'); if (!b || answered) return;
+    answered = true; total++;
+    const ok = b.textContent === q.ans; if (ok) score++;
+    $('opts').querySelectorAll('.opt').forEach(o => { o.disabled = true; if (o.textContent === q.ans) o.classList.add('ok'); else if (o === b) o.classList.add('ko'); });
+    $('qfb').textContent = (ok ? 'Bien vu ! ' : 'Pas tout à fait. ') + q.why;
+    $('qfb').style.color = ok ? 'var(--shield)' : 'var(--bad)';
+    $('qscore').textContent = `Score : ${score} / ${total}`;
+  });
+  $('qnext').addEventListener('click', nextQ);
+
+  const deskMQ = window.matchMedia('(min-width: 901px)');
+  function fitHeight() {
+    const col = document.querySelector('.stage-col');
+    col.style.minHeight = '';
+    if (!deskMQ.matches) return;
+    const box = $('steps'); let max = 0;
+    steps.forEach((s, k) => { steps.forEach((o, j) => o.hidden = j !== k); max = Math.max(max, box.scrollHeight); });
+    steps.forEach((o, j) => o.hidden = j !== cur);
+    col.style.minHeight = Math.ceil(max + 12 + $('stepnav').offsetHeight) + 'px';
+  }
+
+  for (let i = 0; i < 12; i++) step();
+  showStep(0, false); nextQ(); fitHeight(); setPlaying(playing);
+  window.addEventListener('resize', fitHeight);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitHeight);
+})();
+</script>
