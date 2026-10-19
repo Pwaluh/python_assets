@@ -66,6 +66,7 @@ Des pages interactives à ouvrir dans le navigateur pour expliquer les jeux aux 
 ### `space-invaders/`
 
 - `shield_wall_explained.html` : **Le mur de boucliers** – construire le mur tuile par tuile avec des `while` imbriqués, et le centrer quel que soit l'écart.
+- `alien_fleet_explained.html` : **La flotte d'aliens** – placer les aliens par rangée et colonne, et les ranger dans une liste pour les faire bouger et savoir lequel est touché.
 
 ## `shooter_steps/`
 

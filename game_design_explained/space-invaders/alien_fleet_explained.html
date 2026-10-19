@@ -1,0 +1,524 @@
+<title>La flotte d'aliens</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout : borne d'arcade (même série que « Le mur de boucliers »). Gauche = écran de jeu + réglages, droite = étapes une à une. Thème volontairement sombre (écran CRT). */
+:root {
+  --bg: #0a0c1c;
+  --bg2: #10142e;
+  --panel: #161b3d;
+  --line: #2b3266;
+  --ink: #e7ebff;
+  --muted: #8f97c7;
+  --shield: #5cf28a;   /* les boucliers */
+  --k: #ff5fb4;        /* compteur k : quel bouclier */
+  --col: #59d6ff;      /* compteur col */
+  --row: #ffc94a;      /* compteur row */
+  --bad: #ff5b5b;
+  --f-display: "Press Start 2P", "Courier New", monospace;
+  --f-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "Consolas", monospace;
+  color-scheme: dark;
+}
+
+html { background: var(--bg); }
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--f-body); font-size: 17px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 48px;
+  min-height: 100vh;
+  background-attachment: fixed;
+  background-image:
+    radial-gradient(ellipse at 20% 0%, rgba(92, 242, 138, .07), transparent 55%),
+    radial-gradient(ellipse at 90% 100%, rgba(255, 95, 180, .07), transparent 50%);
+}
+.wrap { max-width: 1180px; margin: 0 auto; }
+@media (min-width: 1400px) { .wrap { max-width: 1400px; } }
+
+header { display: grid; gap: 10px; margin-bottom: 24px; max-width: 62ch; }
+.eyebrow { font-family: var(--f-mono); font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(22px, 4.2vw, 38px); line-height: 1.2; margin: 0; color: var(--ink); text-shadow: 0 0 18px rgba(92, 242, 138, .25); }
+h1 .o { color: var(--shield); }
+.lede { margin: 0; font-size: 18px; color: var(--muted); }
+.lede b { color: var(--ink); }
+@media (min-width: 901px) {
+  body { padding-block: 22px; }
+  body header { max-width: none; display: flex; flex-wrap: wrap; align-items: flex-end; column-gap: 48px; row-gap: 8px; margin-bottom: 22px; }
+  body header .eyebrow { flex: 1 0 100%; }
+  body header h1 { flex: none; }
+  body header .lede { flex: 1 1 420px; max-width: 640px; min-width: 0; font-size: 17px; line-height: 1.5; }
+}
+
+.layout { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 36px; align-items: start; }
+@media (max-width: 900px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+/* --- écran --- */
+.stage-col { display: grid; gap: 12px; min-width: 0; }
+.screen { position: relative; border: 3px solid var(--line); border-radius: 14px; overflow: hidden; background: #05061a; box-shadow: 0 0 0 6px var(--bg2), 0 0 40px rgba(92, 242, 138, .12); max-width: 100%; }
+.screen::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(255,255,255,.035) 0 1px, transparent 1px 3px); }
+.screen svg { display: block; width: 100%; height: auto; }
+.screen image { image-rendering: pixelated; }
+.controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 18px; }
+@media (max-width: 520px) { .controls { grid-template-columns: minmax(0, 1fr); } }
+.ctl { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 2px 10px; font-size: 14px; }
+.ctl label { font-family: var(--f-mono); font-size: 13px; color: var(--muted); }
+.ctl output { font-family: var(--f-mono); font-weight: 600; font-size: 14px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.ctl input { grid-column: 1 / -1; width: 100%; accent-color: var(--shield); }
+.ctl input:focus-visible { outline: 2px solid var(--shield); outline-offset: 3px; }
+.bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.seg { display: inline-flex; border: 2px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { font: inherit; font-size: 14px; font-weight: 700; padding: 6px 12px; border: 0; border-right: 2px solid var(--line); background: var(--bg2); color: var(--muted); cursor: pointer; }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--shield); color: #06130b; }
+.btn { font: inherit; font-size: 14px; font-weight: 700; background: var(--panel); color: var(--ink); border: 2px solid var(--line); border-radius: 8px; padding: 6px 14px; cursor: pointer; }
+.btn:hover { border-color: var(--shield); }
+.btn.go { background: var(--shield); color: #06130b; border-color: var(--shield); }
+.btn:focus-visible, .seg button:focus-visible, .opt:focus-visible { outline: 2px solid var(--shield); outline-offset: 2px; }
+.readout { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.chip { background: var(--panel); border: 2px solid var(--line); border-radius: 10px; padding: 8px 12px; display: grid; align-content: center; min-width: 0; min-height: 70px; }
+.chip .k { font-family: var(--f-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chip .v { font-family: var(--f-display); font-size: 18px; line-height: 1.6; white-space: nowrap; }
+.c-k .v { color: var(--k); } .c-r .v { color: var(--row); } .c-c .v { color: var(--col); }
+
+/* --- étapes --- */
+.steps-col { display: grid; gap: 20px; min-width: 0; }
+.steps { display: grid; min-width: 0; align-content: start; }
+.step { display: grid; gap: 12px; align-content: start; }
+.step[hidden] { display: none; }
+.step.enter { animation: enter .3s steps(4, end); }
+@keyframes enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.step-head { display: flex; align-items: baseline; gap: 14px; }
+.num { font-family: var(--f-display); font-size: 26px; line-height: 1; color: var(--shield); min-width: 1.4ch; }
+h2 { font-family: var(--f-display); font-weight: 400; font-size: 16px; line-height: 1.5; margin: 0; text-wrap: balance; }
+.step p { margin: 0; max-width: 62ch; }
+.kw { color: var(--k); font-weight: 700; } .cw { color: var(--col); font-weight: 700; } .rw { color: var(--row); font-weight: 700; } .sw { color: var(--shield); font-weight: 700; } .bw { color: var(--bad); font-weight: 700; }
+.card { background: var(--panel); border: 2px solid var(--line); border-radius: 10px; padding: 14px 16px; min-width: 0; }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.formula { font-family: var(--f-mono); font-size: 15.5px; display: grid; gap: 4px; overflow-x: auto; font-variant-numeric: tabular-nums; }
+.say { font-style: italic; color: var(--muted); }
+.tbl-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 5px 10px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--f-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 400; }
+td.m { font-family: var(--f-mono); font-weight: 600; white-space: nowrap; }
+pre.code { margin: 0; background: #05061a; color: var(--ink); border-radius: 10px; padding: 14px 16px; font-family: var(--f-mono); font-size: 13.5px; line-height: 1.65; overflow-x: auto; border: 2px solid var(--line); }
+.code .kwd { color: #c7a6ff; } .code .fn { color: var(--shield); } .code .cm { color: #6b739f; } .code .ck { color: var(--k); } .code .cr { color: var(--row); } .code .cc { color: var(--col); } .code .nb { color: #ffd88a; }
+
+.stepnav { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: space-between; background: var(--panel); border: 2px solid var(--line); border-radius: 10px; min-height: 70px; padding: 8px 10px; }
+.stepnav .pick { font-family: var(--f-display); font-size: 13px; width: 40px; height: 40px; border: 2px solid var(--line); border-radius: 8px; background: var(--bg2); color: var(--ink); cursor: pointer; display: grid; place-items: center; }
+.stepnav .pick:hover { border-color: var(--shield); }
+.stepnav .pick[aria-current="step"] { background: var(--shield); color: #06130b; border-color: var(--shield); box-shadow: 0 0 14px rgba(92, 242, 138, .45); }
+.stepnav .pick:focus-visible { outline: 2px solid var(--shield); outline-offset: 2px; }
+.stepnav .arrow { width: 40px; height: 40px; padding: 0; font-size: 18px; display: grid; place-items: center; }
+.stepnav .btn:disabled { opacity: .35; cursor: default; }
+
+.opts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.opt { font-family: var(--f-mono); font-size: 18px; font-weight: 600; padding: 10px; border: 2px solid var(--line); border-radius: 8px; background: var(--bg2); color: var(--ink); cursor: pointer; font-variant-numeric: tabular-nums; }
+.opt:hover:not(:disabled) { border-color: var(--shield); }
+.opt.ok { background: var(--shield); color: #06130b; border-color: var(--shield); }
+.opt.ko { text-decoration: line-through; opacity: .5; }
+.feedback { min-height: 1.6em; margin: 10px 0 0; font-weight: 700; }
+.score { font-size: 14px; color: var(--muted); }
+
+@media (min-width: 901px) {
+  .layout { align-items: stretch; }
+  .stage-col { display: flex; flex-direction: column; }
+  .readout { margin-top: auto; }
+  .steps-col { contain: size; display: flex; flex-direction: column; gap: 12px; }
+  .steps { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 8px; }
+  .stepnav { flex: none; }
+}
+@media (prefers-reduced-motion: reduce) { .step.enter { animation: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Atelier Python · Codesters · grilles et listes</span>
+    <h1>La flotte <span class="o">d'aliens</span></h1>
+    <p class="lede">Quarante aliens rangés en <b>rangées</b> et <b>colonnes</b>. Les créer est facile ; ce qui compte, c'est de pouvoir <b>les retrouver</b> ensuite pour les faire bouger et savoir lequel est touché.</p>
+  </header>
+
+  <div class="layout">
+    <div class="stage-col">
+      <div class="screen">
+        <svg id="stage" viewBox="-262 -244 524 470" role="img" aria-label="Écran de jeu : la flotte d'aliens">
+          <rect x="-250" y="-244" width="500" height="470" fill="#05061a"/>
+          <g id="stars"></g>
+          <g id="ruler"></g>
+          <line x1="0" y1="-214" x2="0" y2="215" stroke="var(--ink)" stroke-width="1" stroke-dasharray="3 6" opacity=".25"/>
+          <g id="fleet"></g>
+          <g id="booms"></g>
+          <rect id="cursor" fill="none" stroke="#ffffff" stroke-width="2.5" visibility="hidden"/>
+          <g id="tag" visibility="hidden" font-family="var(--f-mono)" font-weight="600" font-size="12">
+            <path id="tagArrow" d="" fill="var(--k)"/>
+            <rect id="tagBg" rx="4" fill="#05061a" stroke="var(--k)" stroke-width="1.5"/>
+            <text id="tagTxt" fill="var(--k)" text-anchor="middle" dominant-baseline="central"></text>
+          </g>
+          <line id="shot" x1="0" y1="0" x2="0" y2="0" stroke="var(--col)" stroke-width="3" visibility="hidden"/>
+          <image id="ship" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACcAAAAkCAYAAAAKNyObAAABMUlEQVR4nGNkoBIQEVL6D2O/eXePkRpmMlHDEFqBQe04ioIfOSqbDtyFi9c5KMPZlETxoA65Qe04FmoZtGwXtUxCgEEdcoPacSRHK3IO1ahC5NAFER/h7AQGhPiNNmWyC+dBHXKD2nEkF5DI0Xri0jmC6i30jODs0WilFyAqmImJyoQV/HA2cs5FBqRG8aAOuUHtOJRCmBatWWIALnsHdcgNascxIgfpazsVuITooTtYNRBT8BIDkHMuMkB2w6AOuUHtOJTcenfKKgQHKdhxReWug4Sj2M0ee/QhA2TzRZHsHdQhN6gdx0hqEwhXVNblpsDZTZPnYFVDTBRbjEYrFQBKbiUm9yFHHzJArhPrclP+Y1WEI7pxgUEdcoPacSjNIuSciwtQ0pQi1fxBHXKD2nEAdJVgOpR+ZmUAAAAASUVORK5CYII=" x="-19.5" y="172" width="39" height="36"/>
+          <line x1="-250" y1="-244" x2="-250" y2="226" stroke="var(--bad)" stroke-width="2" opacity=".5"/>
+          <line x1="250" y1="-244" x2="250" y2="226" stroke="var(--bad)" stroke-width="2" opacity=".5"/>
+          <text id="status" x="-240" y="150" font-family="var(--f-body)" font-weight="700" font-size="14"></text>
+        </svg>
+      </div>
+      <div class="controls">
+        <div class="ctl"><label for="cols">COLS</label><output id="oCols">8</output><input id="cols" type="range" min="3" max="10" step="1" value="8"></div>
+        <div class="ctl"><label for="rows">len(ROW_TYPES)</label><output id="oRows">5</output><input id="rows" type="range" min="1" max="6" step="1" value="5"></div>
+        <div class="ctl"><label for="gapx">GAP_X</label><output id="oGapx">50</output><input id="gapx" type="range" min="38" max="60" step="2" value="50"></div>
+        <div class="ctl"><label for="gapy">GAP_Y</label><output id="oGapy">44</output><input id="gapy" type="range" min="34" max="56" step="2" value="44"></div>
+      </div>
+      <div class="bar">
+        <div class="seg" role="group" aria-label="Ranger les aliens dans une liste ?">
+          <button type="button" data-mode="sans" aria-pressed="false">Sans liste</button>
+          <button type="button" data-mode="avec" aria-pressed="true">Avec liste</button>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn go" id="buildBtn" type="button">▶ Construire</button>
+          <button class="btn" id="moveBtn" type="button">Faire avancer</button>
+        </div>
+      </div>
+      <div class="readout">
+        <div class="chip c-r"><span class="k">row · rangée</span><span class="v" id="vr">–</span></div>
+        <div class="chip c-c"><span class="k">col · colonne</span><span class="v" id="vc">–</span></div>
+        <div class="chip c-k"><span class="k">len(invaders)</span><span class="v" id="vn">0</span></div>
+      </div>
+    </div>
+
+    <div class="steps-col">
+      <div class="steps" id="steps">
+        <section class="step">
+          <div class="step-head"><span class="num">1</span><h2>Une grille</h2></div>
+          <p>La flotte, c'est des <span class="rw">rangées</span> d'aliens, et chaque rangée contient des <span class="cw">colonnes</span>. On met donc une boucle de <span class="cw">col</span> <b>à l'intérieur</b> d'une boucle de <span class="rw">row</span>.</p>
+          <div class="card"><p>Appuie sur <b>▶ Construire</b> : les aliens apparaissent dans l'ordre où le programme les crée. <span class="cw">col</span> va de 0 à la fin de la rangée, puis <span class="rw">row</span> passe à la rangée suivante.</p></div>
+          <p class="say">C'est la même structure que le mur de boucliers.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">2</span><h2>Calculer la place</h2></div>
+          <p>Au lieu de faire avancer un <span class="mono">x</span> à la main avec <span class="mono">x += 50</span> (et penser à le remettre au début), on <b>calcule</b> la place de chaque alien à partir de son numéro :</p>
+          <div class="card formula">
+            <span>x = START_X + <span class="cw">col</span> × GAP_X</span>
+            <span>y = START_Y − <span class="rw">row</span> × GAP_Y</span>
+          </div>
+          <p>Le <b>moins</b> sur y : chaque nouvelle rangée est <b>plus bas</b>. Et pour centrer la flotte, on utilise la même formule que pour le mur :</p>
+          <div class="card formula"><span>START_X = −(COLS − 1) × GAP_X ÷ 2 = <span class="sw" id="s2sx">−175</span></span></div>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">3</span><h2>Quel alien, quelle rangée ?</h2></div>
+          <p>Plutôt qu'une chaîne de <span class="mono">if / elif</span>, une liste dit quelle image va sur quelle rangée :</p>
+          <pre class="code" id="code3"></pre>
+          <p>Pour la rangée <span class="rw">row</span>, l'image est simplement <span class="mono">ROW_TYPES[<span class="rw">row</span>]</span>. Bouge le curseur <span class="mono">len(ROW_TYPES)</span> : ajouter une rangée, c'est ajouter une ligne à la liste.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">4</span><h2>L'étiquette invader</h2></div>
+          <p><span class="mono">invader = codesters.Sprite(...)</span> crée un alien et colle dessus l'étiquette <span class="kw">invader</span>. Au tour suivant, on <b>décolle</b> l'étiquette pour la coller sur le nouvel alien.</p>
+          <p>À la fin, <span class="kw">invader</span> ne désigne que <b>le dernier</b>. Les autres sont toujours là, mais plus rien ne permet de les retrouver.</p>
+          <div class="card"><p>Choisis <b>Sans liste</b>, construis, puis appuie sur <b>Faire avancer</b> : <span class="bw">seul l'alien étiqueté bouge</span>.</p></div>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">5</span><h2>Ranger dans une liste</h2></div>
+          <p>La règle : <b>tout sprite qu'on devra retoucher plus tard doit être rangé au moment où on le crée.</b> Une ligne suffit :</p>
+          <div class="card formula"><span>invaders.<span class="sw">append</span>(invader)</span></div>
+          <p>Choisis <b>Avec liste</b> : maintenant <b>Faire avancer</b> parcourt la liste et déplace toute la flotte. Au bord, elle descend et repart dans l'autre sens.</p>
+          <pre class="code" id="code5"></pre>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">6</span><h2>Lequel est touché ?</h2></div>
+          <p>Pas besoin de l'étiquette : Codesters donne <b>lui-même</b> l'alien touché à la fonction de collision. Clique sur un alien pour tirer dessus.</p>
+          <pre class="code" id="code6"></pre>
+          <p>On le retire aussi de la liste, sinon la flotte essaierait de déplacer un alien supprimé. Et quand <span class="mono">len(invaders) == 0</span>, le joueur a gagné.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">7</span><h2>Dans Codesters</h2></div>
+          <pre class="code" id="code7"></pre>
+          <p class="say">L'inscription de la collision et l'append se font dans la boucle, pendant que l'étiquette est encore sur le bon alien.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">★</span><h2>Défi : trouve l'alien</h2></div>
+          <div class="card">
+            <p style="margin:0 0 12px" id="qtext"></p>
+            <div class="opts" id="opts"></div>
+            <p class="feedback" id="qfb" aria-live="polite"></p>
+            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+              <button class="btn" id="qnext" type="button">Question suivante</button>
+              <span class="score" id="qscore">Score : 0 / 0</span>
+            </div>
+          </div>
+        </section>
+      </div>
+      <nav class="stepnav" id="stepnav" aria-label="Étapes">
+        <button class="btn arrow" id="prevStep" type="button" aria-label="Étape précédente" title="Précédent">←</button>
+        <span id="picks" style="display:flex;gap:6px;flex-wrap:wrap"></span>
+        <button class="btn arrow" id="nextStep" type="button" aria-label="Étape suivante" title="Suivant">→</button>
+      </nav>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const IMG = { orbe: ["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAAeCAYAAABE4bxTAAAA5klEQVR4nGNkIBGICCn9J0X9m3f3GElRz0Sac2gPBp2DcAYnrqjZUHWXJAsC2pSxiuOKykEXQoPOQSjBhhxNTXa74OJ6NtiDnVRw6QgiuusOucHZyNE36EJo0DmIhRhFhpnUsezSEcJqBl0IDToHseDKWcQAaWlZrOJPnz4mqBfZrrpDbnA3DLoQGnUQITDqIEKAqLrs3CNEiTbxcDxJFuTbLoSzjeRs4OzRuoxcQFSUUQvgiiZkMOhCaNA5CGcjP8VoAdZG/pxzCYzUVoMMBl0IDToHoQQbcvDiClJaqxl0ITToHAQApytRKmZ6J6YAAAAASUVORK5CYII=", "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAAeCAYAAABE4bxTAAAA60lEQVR4nGNkIBGICCn9J0X9m3f3GElRz0Sac2gPBp2DcAYnrqjZUHWXJAsC2pSxiuOKykEXQoPOQSjBhhxNTXa74OJ6NtiDnVRw6QgiuusOucHZyNE36EJo0DmIhRhFhpnUsezSEcJqBl0IDToHseDKWbiAtLQsVvGnTx+TZDGyXXWH3OBuGHQhNOogQmDUQYQAUXXZuUeIEm3i4XiSLMi3XQhnG8nZwNmjdRm5gKgooxbAFU3IYNCF0KBzEM5GforRAqyN/DnnEhiprQYZDLoQGnQOIqrFiCsKcAU7LjW4og8ZDLoQGnQOAgAaGU0tQ5LGcgAAAABJRU5ErkJggg=="], meduse: ["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAAeCAYAAABE4bxTAAAA/klEQVR4nGNkIAKICCn9J0YdIfDm3T1GQmqYqGERNcGgcxBKEOKKmmn37lLFsiwlZaziyFE56EJo0DmIETmaNLYdgUvkaUhi1TDpxnOSLCDGnBteNnD2oAuhQecgFlwSuKLmiocZnK2z4xRBC9IUZElSP+hCaNA5CGcuozU4YiEFLwyR3TDoQmjQOQglyrgKOgbEEd8mVMDZgy6EBp2DWJCrfjkGBnj0ybkh6pdHuxC5j1riyGC0+UEKwFmXIYNHdWFILctVWKMVuaCTa1qFteWJag52MOhCaNA5CGcQ2px4Bg925OighRpkMOhCaNA5CCUIByqakMGgC6FB5yAA+L5aWf1VfzEAAAAASUVORK5CYII=", "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAAeCAYAAABE4bxTAAAA90lEQVR4nGNkIAKICCn9J0YdIfDm3T1GQmqYqGERNcGgcxBKEOKKmmn37lLFsiwlZaziyFE56EJo0DmIETmaNLYdgUvkaUhi1TDpxnOSLCDGnBteNnD2oAuhQecgFlwSuKLmiocZnK2z4xRBC9IUZElSP+hCaNA5CGeU4QLEBDsl6gddCA06B6FE2aNdR3CpoxsYdCE06BzEglz1yzEwYG1+yLkh6hrkaKWW+GjzgxSAmsvqwrA2wuXcnmGNyiMWUnD1NicQapCjA9lMXOYgg0EXQoPOQSTXZbiilVpqBl0IDToHEQxadICcm5BzGbXUDLoQGnQOAgAjvVT+dXpdIgAAAABJRU5ErkJggg=="], drone: ["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACcAAAAeCAYAAACv1gdQAAAA/0lEQVR4nGNkoBIQEVL6D2O/eXePkRpmMlHDEFqBQe04ioIfOSqb7nXAxeuUKuBsSqJ4UIfcoHYcI6m5DFm90TYfghac89oCZ5Nq/qAOuUHtOBZkDq4oxhWVARo2hG3YhmCe89pC0HxkMKhDblA7jhFXlCHnMmJyJakAl/nI4oM65Aa141hwSeAK6tenVMi2TNTsDlbzcYFBHXKD2nEsyIUhciFJTLAjRxNydOMSxwVw1b+DOuQGteNwNmFIbRqRCohpSg3qkBvUjiOq84EcxSIFiNz3ZsIdrOpR9OJQT0yreFCH3KB2HFHRqtHkBo/WG3W7yO6HkmrOoA65Qe04ADnSYetD80Y3AAAAAElFTkSuQmCC", "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACcAAAAeCAYAAACv1gdQAAAA/UlEQVR4nGNkoBIQEVL6D2O/eXePkRpmMlHDEFqBQe04ioIfOSqb7nXAxeuUKuBsSqJ4UIfcoHYcyUGOHJVG23wIqj/ntQXOJjWKB3XIDWrHsSBzcBWkuKIyQMOGsA3bEMxzXlsImo8sPqhDblA7jhFXlCHnMmJyJakAl/nI4oM65Aa141hwSeAK6tenVMi2TNTsDlbzcYFBHXKD2nE4oxU5KnEB5GhCjm5c4rjMxxXFgzrkBrXjGEmtT6kFcDWlkO0d1CE3qB1HVMsUOahFChC5782EO1jVo+jFoZ6YVvGgDrlB7TicQavR5AaPyht1u6gyvECq+YM65Aa14wDmbl4z9L4dEgAAAABJRU5ErkJggg=="] };
+  const SIZE = { orbe: [36, 30], meduse: [36, 30], drone: [39, 30] };
+  const BOOM = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACcAAAAhCAYAAABa+rIoAAAAuklEQVR4nO2XMQ5AQBBFl9JJNJxF7SQqhcpJ1M5C4yTa1Zm/iQm7EvmRedUmZtbP/5ldnDN+SBbb4LvSn83jdtsfW4/kcdK+hVpcYPObyFxbyoNpkxe8iJ7aOWpxquVBZNgAtvulkZpqkKK1l/p6lvoHeyLUzlGLe3QoqlOJUWpAxLFTTO0ctTj1EA7iQ5Qo970610WxXvdixIgSN7Vz1OJsWlOhFmd3ayrU4uxLOBVqcfbfmgq1OOOXHOcZYy4sjM/rAAAAAElFTkSuQmCC";
+  const ALL_TYPES = ['orbe', 'orbe', 'meduse', 'meduse', 'drone', 'drone'];
+  const CODE_NAME = { orbe: 'alien_orbe_1_d12', meduse: 'alien_meduse_1_49b', drone: 'alien_drone_1_f72' };
+  const $ = id => document.getElementById(id);
+  const NS = 'http://www.w3.org/2000/svg';
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const START_Y = 200;
+  const fr = n => { let s = (Math.round(n * 10) / 10).toString().replace('.', ',').replace(/^-/, '−'); return s === '−0' ? '0' : s; };
+
+  // décor
+  let st = '', seed = 5; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+  for (let i = 0; i < 110; i++) st += `<rect x="${(rnd() * 500 - 250).toFixed(0)}" y="${(rnd() * 470 - 244).toFixed(0)}" width="${rnd() < .2 ? 2 : 1}" height="${rnd() < .2 ? 2 : 1}" fill="#cfd6ff" opacity="${(.3 + rnd() * .6).toFixed(2)}"/>`;
+  $('stars').innerHTML = st;
+  let ru = '<line x1="-250" y1="-218" x2="250" y2="-218" stroke="var(--line)" stroke-width="2"/>';
+  for (let x = -250; x <= 250; x += 50) ru += `<line x1="${x}" y1="-222" x2="${x}" y2="-214" stroke="var(--muted)" stroke-width="1.5"/><text x="${x}" y="-228" text-anchor="middle" font-family="var(--f-mono)" font-size="10" fill="var(--muted)">${fr(x)}</text>`;
+  $('ruler').innerHTML = ru;
+
+  let cols = 8, nrows = 5, gapx = 50, gapy = 44, mode = 'avec';
+  let aliens = [], invaders = [], labeled = null, built = 0, buildTimer = null, moveTimer = null, direction = 1, frame = 0;
+
+  const startX = () => -(cols - 1) * gapx / 2;
+  function makeEl(a) {
+    const im = document.createElementNS(NS, 'image');
+    const [w, h] = SIZE[a.type];
+    im.setAttribute('width', w); im.setAttribute('height', h);
+    im.setAttribute('href', IMG[a.type][frame]);
+    im.style.cursor = 'crosshair';
+    im.addEventListener('pointerdown', e => { e.stopPropagation(); shoot(a); });
+    $('fleet').appendChild(im); a.el = im; place(a);
+  }
+  function place(a) { const [w, h] = SIZE[a.type]; a.el.setAttribute('x', a.x - w / 2); a.el.setAttribute('y', -a.y - h / 2); }
+
+  function plan() {
+    const out = [];
+    let row = 0;
+    while (row < nrows) {
+      let col = 0;
+      while (col < cols) {
+        out.push({ row, col, type: ALL_TYPES[row], x: startX() + col * gapx, y: START_Y - row * gapy, alive: true });
+        col++;
+      }
+      row++;
+    }
+    return out;
+  }
+
+  function stopMove() { if (moveTimer) { clearInterval(moveTimer); moveTimer = null; } $('moveBtn').textContent = 'Faire avancer'; }
+  function stopBuild() { if (buildTimer) { clearInterval(buildTimer); buildTimer = null; } $('buildBtn').textContent = '▶ Construire'; }
+  function spawnOne(a) {
+    makeEl(a);
+    labeled = a;
+    if (mode === 'avec') invaders.push(a);
+  }
+  function resetAll(instant) {
+    stopMove(); stopBuild();
+    $('fleet').innerHTML = ''; $('booms').innerHTML = '';
+    aliens = plan(); invaders = []; labeled = null; direction = 1; built = 0;
+    if (instant) { aliens.forEach(spawnOne); built = aliens.length; }
+    draw();
+  }
+
+  function draw() {
+    const cur = buildTimer && built > 0 ? aliens[built - 1] : null;
+    if (cur) {
+      const [w, h] = SIZE[cur.type];
+      $('cursor').setAttribute('x', cur.x - w / 2 - 3); $('cursor').setAttribute('y', -cur.y - h / 2 - 3);
+      $('cursor').setAttribute('width', w + 6); $('cursor').setAttribute('height', h + 6);
+      $('cursor').setAttribute('visibility', 'visible');
+      $('vr').textContent = cur.row; $('vc').textContent = cur.col;
+    } else {
+      $('cursor').setAttribute('visibility', 'hidden');
+      $('vr').textContent = '0→' + (nrows - 1); $('vc').textContent = '0→' + (cols - 1);
+    }
+    $('vn').textContent = mode === 'avec' ? invaders.length : '?';
+    // étiquette « invader »
+    if (labeled && labeled.alive && (mode === 'sans' || cur)) {
+      const lx = Math.max(-200, Math.min(200, labeled.x)), ly = -labeled.y + 26;
+      const txt = 'invader', w = 14 + txt.length * 7.3;
+      $('tagTxt').textContent = txt; $('tagTxt').setAttribute('x', lx); $('tagTxt').setAttribute('y', ly + 10);
+      $('tagBg').setAttribute('x', lx - w / 2); $('tagBg').setAttribute('y', ly); $('tagBg').setAttribute('width', w); $('tagBg').setAttribute('height', 20);
+      $('tagArrow').setAttribute('d', `M${labeled.x - 5} ${ly + 1} h10 l-5 -8 Z`);
+      $('tag').setAttribute('visibility', 'visible');
+    } else $('tag').setAttribute('visibility', 'hidden');
+
+    const alive = aliens.filter(a => a.alive && a.el);
+    let msg = '', col = 'var(--muted)';
+    if (built && alive.length === 0) { msg = 'len(invaders) == 0 : gagné !'; col = 'var(--shield)'; }
+    else if (alive.some(a => a.y < -110)) { msg = 'Les aliens ont atteint le vaisseau !'; col = 'var(--bad)'; }
+    else if (mode === 'sans' && built === aliens.length && aliens.length) { msg = 'Sans liste : seul « invader » est retrouvable'; col = 'var(--bad)'; }
+    else if (mode === 'avec' && built === aliens.length && aliens.length) { msg = `${invaders.length} aliens rangés dans la liste`; col = 'var(--shield)'; }
+    $('status').textContent = msg; $('status').setAttribute('fill', col);
+    $('s2sx').textContent = fr(startX());
+  }
+
+  // ----- construire -----
+  $('buildBtn').addEventListener('click', () => {
+    if (buildTimer) { stopBuild(); draw(); return; }
+    resetAll(false);
+    $('buildBtn').textContent = '■ Stop';
+    buildTimer = setInterval(() => {
+      if (built >= aliens.length) { stopBuild(); draw(); return; }
+      spawnOne(aliens[built]); built++; draw();
+    }, reduce ? 40 : 110);
+  });
+
+  // ----- déplacer la flotte -----
+  function moveFleet() {
+    // ce que le programme peut retrouver : la liste… ou seulement l'étiquette
+    const reach = mode === 'avec' ? invaders : (labeled && labeled.alive ? [labeled] : []);
+    if (!reach.length) { stopMove(); return; }
+    frame = 1 - frame;
+    reach.forEach(a => a.el.setAttribute('href', IMG[a.type][frame]));
+    let hitEdge = false;
+    reach.forEach(a => { const nx = a.x + 10 * direction; if (nx > 230 || nx < -230) hitEdge = true; });
+    if (hitEdge) { direction = -direction; reach.forEach(a => { a.y -= 20; place(a); }); }
+    else reach.forEach(a => { a.x += 10 * direction; place(a); });
+    if (reach.some(a => a.y < -110)) stopMove();
+    draw();
+  }
+  $('moveBtn').addEventListener('click', () => {
+    if (moveTimer) { stopMove(); return; }
+    if (buildTimer) return;
+    if (!built) resetAll(true);
+    if (aliens.filter(a => a.alive).some(a => a.y < -110)) resetAll(true);
+    $('moveBtn').textContent = '■ Arrêter';
+    moveTimer = setInterval(moveFleet, reduce ? 300 : 260);
+  });
+
+  // ----- tir (clic sur un alien) -----
+  function shoot(a) {
+    if (!a.alive) return;
+    $('shot').setAttribute('x1', 0); $('shot').setAttribute('y1', 172); $('shot').setAttribute('x2', a.x); $('shot').setAttribute('y2', -a.y);
+    $('shot').setAttribute('visibility', 'visible');
+    setTimeout(() => $('shot').setAttribute('visibility', 'hidden'), 90);
+    a.alive = false; a.el.remove();
+    const i = invaders.indexOf(a); if (i >= 0) invaders.splice(i, 1);
+    const b = document.createElementNS(NS, 'image');
+    b.setAttribute('href', BOOM); b.setAttribute('x', a.x - 19.5); b.setAttribute('y', -a.y - 16.5); b.setAttribute('width', 39); b.setAttribute('height', 33);
+    $('booms').appendChild(b); setTimeout(() => b.remove(), 260);
+    $('vr').textContent = a.row; $('vc').textContent = a.col;
+    draw();
+    $('vr').textContent = a.row; $('vc').textContent = a.col;
+  }
+
+  [['cols', 'oCols', v => cols = v], ['rows', 'oRows', v => nrows = v], ['gapx', 'oGapx', v => gapx = v], ['gapy', 'oGapy', v => gapy = v]].forEach(([id, o, set]) => {
+    $(id).addEventListener('input', e => { set(+e.target.value); $(o).textContent = e.target.value; resetAll(true); updateCode3(); });
+  });
+  document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => {
+    mode = b.dataset.mode; document.querySelectorAll('.seg button').forEach(x => x.setAttribute('aria-pressed', x === b)); resetAll(true);
+  }));
+
+  // ----- code -----
+  function updateCode3() {
+    const lines = ALL_TYPES.slice(0, nrows).map((t, i) => `    <span class="nb">"${CODE_NAME[t]}"</span>,   <span class="cm"># row ${i}</span>`);
+    $('code3').innerHTML = `ROW_TYPES = [\n${lines.join('\n')}\n]`;
+  }
+  updateCode3();
+  $('code5').innerHTML =
+`i = <span class="nb">0</span>
+<span class="kwd">while</span> i &lt; <span class="fn">len</span>(invaders):
+    invader = invaders[i]
+    invader.<span class="fn">set_x</span>(invader.<span class="fn">get_x</span>() + <span class="nb">10</span> * direction)
+    i += <span class="nb">1</span>`;
+  $('code6').innerHTML =
+`<span class="kwd">def</span> <span class="fn">invader_hit</span>(sprite, hit_sprite):
+    <span class="cm"># sprite = l'alien touché, donné par Codesters</span>
+    <span class="kwd">if</span> hit_sprite.<span class="fn">get_name</span>() == <span class="nb">"tir_joueur_xxx"</span>:
+        invaders.<span class="fn">remove</span>(sprite)
+        stage.<span class="fn">remove_sprite</span>(sprite)
+        stage.<span class="fn">remove_sprite</span>(hit_sprite)`;
+  $('code7').innerHTML =
+`COLS = <span class="nb">8</span>
+GAP_X = <span class="nb">50</span>
+GAP_Y = <span class="nb">44</span>
+START_X = -(COLS - <span class="nb">1</span>) * GAP_X / <span class="nb">2</span>
+START_Y = <span class="nb">200</span>
+invaders = []
+
+<span class="kwd">def</span> <span class="fn">spawn_invaders</span>():
+    <span class="cr">row</span> = <span class="nb">0</span>
+    <span class="kwd">while</span> <span class="cr">row</span> &lt; <span class="fn">len</span>(ROW_TYPES):
+        <span class="cc">col</span> = <span class="nb">0</span>
+        <span class="kwd">while</span> <span class="cc">col</span> &lt; COLS:
+            x = START_X + <span class="cc">col</span> * GAP_X
+            y = START_Y - <span class="cr">row</span> * GAP_Y
+            invader = codesters.Sprite(ROW_TYPES[<span class="cr">row</span>], x, y)
+            invader.<span class="fn">event_collision</span>(invader_hit)
+            invaders.<span class="fn">append</span>(invader)
+            <span class="cc">col</span> += <span class="nb">1</span>
+        <span class="cr">row</span> += <span class="nb">1</span>`;
+
+  // ----- étapes -----
+  const steps = [...document.querySelectorAll('#steps .step')];
+  let cur = 0;
+  $('picks').innerHTML = steps.map((s, i) => `<button class="pick" type="button" data-i="${i}" aria-label="Étape ${s.querySelector('.num').textContent}">${s.querySelector('.num').textContent}</button>`).join('');
+  function showStep(i, anim = true) {
+    cur = Math.max(0, Math.min(steps.length - 1, i));
+    steps.forEach((s, k) => { s.hidden = k !== cur; s.classList.remove('enter'); });
+    if (anim && !reduce) { void steps[cur].offsetWidth; steps[cur].classList.add('enter'); }
+    $('picks').querySelectorAll('.pick').forEach((b, k) => { if (k === cur) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current'); });
+    $('prevStep').disabled = cur === 0; $('nextStep').disabled = cur === steps.length - 1;
+  }
+  $('picks').addEventListener('click', e => { const b = e.target.closest('.pick'); if (b) showStep(+b.dataset.i); });
+  $('prevStep').addEventListener('click', () => showStep(cur - 1));
+  $('nextStep').addEventListener('click', () => showStep(cur + 1));
+  document.addEventListener('keydown', e => {
+    if (e.target.closest('input')) return;
+    if (e.key === 'ArrowRight') showStep(cur + 1); if (e.key === 'ArrowLeft') showStep(cur - 1);
+  });
+
+  // ----- défi (COLS = 8, GAP 50 × 44, START_X = −175, START_Y = 200) -----
+  let q = null, answered = false, score = 0, total = 0, last = '';
+  const pairTxt = (x, y) => `(${fr(x)}, ${fr(y)})`;
+  function nextQ() {
+    let r, c; do { r = Math.floor(Math.random() * 5); c = Math.floor(Math.random() * 8); } while (r + '-' + c === last);
+    last = r + '-' + c; answered = false;
+    const x = -175 + c * 50, y = 200 - r * 44;
+    const ans = pairTxt(x, y);
+    const cand = [ans, pairTxt(-175 + r * 50, 200 - c * 44), pairTxt(x, 200 + r * 44), pairTxt(-175 + (c + 1) * 50, y), pairTxt(c * 50, y), pairTxt(x, 200 - (r + 1) * 44)];
+    const opts = []; cand.forEach(v => { if (!opts.includes(v) && opts.length < 4) opts.push(v); });
+    q = { r, c, ans };
+    $('qtext').innerHTML = `Avec <span class="mono">START_X = −175</span>, <span class="mono">START_Y = 200</span>, <span class="mono">GAP_X = 50</span>, <span class="mono">GAP_Y = 44</span> : où est l'alien <span class="rw">row = ${r}</span>, <span class="cw">col = ${c}</span> ?`;
+    $('opts').innerHTML = opts.sort(() => Math.random() - .5).map(v => `<button class="opt" type="button">${v}</button>`).join('');
+    $('qfb').textContent = '';
+  }
+  $('opts').addEventListener('click', e => {
+    const b = e.target.closest('.opt'); if (!b || answered) return;
+    answered = true; total++;
+    const ok = b.textContent === q.ans; if (ok) score++;
+    $('opts').querySelectorAll('.opt').forEach(o => { o.disabled = true; if (o.textContent === q.ans) o.classList.add('ok'); else if (o === b) o.classList.add('ko'); });
+    $('qfb').textContent = (ok ? 'Bien vu ! ' : 'Pas tout à fait. ') + `x = −175 + ${q.c} × 50, y = 200 − ${q.r} × 44.`;
+    $('qfb').style.color = ok ? 'var(--shield)' : 'var(--bad)';
+    $('qscore').textContent = `Score : ${score} / ${total}`;
+  });
+  $('qnext').addEventListener('click', nextQ);
+
+  const deskMQ = window.matchMedia('(min-width: 901px)');
+  function fitHeight() {
+    const col = document.querySelector('.stage-col');
+    col.style.minHeight = '';
+    if (!deskMQ.matches) return;
+    const box = $('steps'); let max = 0;
+    steps.forEach((s, k) => { steps.forEach((o, j) => o.hidden = j !== k); max = Math.max(max, box.scrollHeight); });
+    steps.forEach((o, j) => o.hidden = j !== cur);
+    col.style.minHeight = Math.ceil(max + 12 + $('stepnav').offsetHeight) + 'px';
+  }
+
+  resetAll(true); showStep(0, false); nextQ(); fitHeight();
+  window.addEventListener('resize', fitHeight);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitHeight);
+})();
+</script>
