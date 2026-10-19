@@ -1,10 +1,18 @@
-# Stage Python – jeu de tir top-down
+# Stage Python – jeux sur Codesters
 
-Ressources pour le stage Python sur Codesters : les sprites du jeu et des pages qui expliquent comment le jeu fonctionne.
+Ressources pour le stage Python sur Codesters : les sprites des jeux, des pages qui expliquent comment les jeux fonctionnent, et le code étape par étape.
 
-## `sprites/`
+Lien direct d'une image (pour l'importer dans Codesters) :
 
-Les images du jeu, au format PNG. Tous les personnages regardent vers la **droite** (angle 0°).
+```
+https://raw.githubusercontent.com/Pwaluh/stages/master/sprites/NOM_DU_JEU/NOM_DU_FICHIER.png
+```
+
+Par exemple : `https://raw.githubusercontent.com/Pwaluh/stages/master/sprites/space-invaders/vaisseau_joueur.png`
+
+## `sprites/topdown-shooter/`
+
+Les images du jeu de tir vu de dessus. Tous les personnages regardent vers la **droite** (angle 0°).
 
 | Fichier | Taille | Rôle |
 |---|---|---|
@@ -20,17 +28,33 @@ Les images du jeu, au format PNG. Tous les personnages regardent vers la **droit
 | `map_ferme.png` | 2048 × 2048 | la map : un champ avec une ferme en ruine |
 | `apercu.png` | — | aperçu de tous les sprites (pas utilisé dans le jeu) |
 
-Lien direct d'une image (pour l'importer dans Codesters) :
-
-```
-https://raw.githubusercontent.com/Pwaluh/stages/master/sprites/NOM_DU_FICHIER.png
-```
-
 Codesters réduit les grandes images pour les faire tenir dans la scène : la map s'affiche à environ 300 px, il faut donc lui donner `map.set_size(6.8)` pour retrouver sa vraie taille.
+
+## `sprites/space-invaders/`
+
+Les images du remake de shoot'em up spatial, en pixel art. Les animations ont **2 images** (`_1` et `_2`) à alterner.
+
+| Fichier | Taille | Rôle |
+|---|---|---|
+| `vaisseau_joueur.png` | 39 × 36 | le vaisseau du joueur |
+| `flamme_1.png`, `flamme_2.png` | 15 × 15 | flamme du réacteur, sous le vaisseau |
+| `alien_meduse_1.png`, `alien_meduse_2.png` | 36 × 30 | aliens de la rangée du haut |
+| `alien_drone_1.png`, `alien_drone_2.png` | 39 × 30 | aliens des rangées du milieu |
+| `alien_orbe_1.png`, `alien_orbe_2.png` | 36 × 30 | aliens des rangées du bas |
+| `soucoupe_1.png`, `soucoupe_2.png` | 48 × 24 | soucoupe bonus |
+| `tir_joueur.png` | 9 × 18 | laser du joueur |
+| `tir_alien_1.png`, `tir_alien_2.png` | 15 × 18 | tir des aliens |
+| `explosion_1.png`, `explosion_2.png` | 39 × 33 | explosion |
+| `bouclier_intact.png`, `bouclier_abime.png`, `bouclier_casse.png` | 24 × 24 | une tuile de bouclier en 3 états |
+| `vie.png` | 26 × 24 | icône de vie |
+| `fond_espace.png` | 500 × 500 | fond étoilé, à la taille de la scène |
+| `apercu.png`, `exemple_scene.png` | — | aperçus (pas utilisés dans le jeu) |
+
+Les boucliers sont faits de tuiles : on en assemble plusieurs, et à chaque impact la tuile passe de `intact` à `abime`, puis `casse`, puis disparaît.
 
 ## `game_design_explained/`
 
-Des pages interactives à ouvrir dans le navigateur pour expliquer le jeu aux élèves.
+Des pages interactives à ouvrir dans le navigateur pour expliquer le jeu de tir aux élèves.
 
 - `aim_explained.html` : **Viser un zombie** – comment `atan2` donne l'angle pour que le soldat regarde la cible.
 - `world_scrolling_explained.html` : **La carte qui glisse** – pourquoi l'hélico, les zombies et les balles doivent bouger en même temps que la map.
@@ -39,4 +63,4 @@ Des pages interactives à ouvrir dans le navigateur pour expliquer le jeu aux é
 
 ## `shooter_steps/`
 
-Le code du jeu en 5 étapes (joueur, hélico, zombies, tir, victoire/défaite), chacune en version **base** et **bonus**. Le guide est dans `shooter_steps/README.md`.
+Le code du jeu de tir en 5 étapes (joueur, hélico, zombies, tir, victoire/défaite), chacune en version **base** et **bonus**. Le guide est dans `shooter_steps/README.md`.
