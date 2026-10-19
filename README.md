@@ -57,6 +57,15 @@ Les boucliers sont faits de tuiles : on en assemble plusieurs, et à chaque impa
 
 Des pages interactives à ouvrir dans le navigateur pour expliquer les jeux aux élèves.
 
+### `common/`
+
+Les bases qui servent dans tous les projets.
+
+- `coordinates_explained.html` : **Le repère de Codesters** – le point (0, 0) au centre, y vers le haut, la position = le centre du sprite, l'ordre d'empilement et la réduction des grandes images.
+- `collisions_explained.html` : **Les collisions** – `sprite` et `hit_sprite`, les deux appels quand les deux sprites ont un événement, et la règle « celui qui reçoit le coup gère ».
+- `lists_explained.html` : **Les listes vivantes** – `append` à la création, `remove` à la destruction, et le piège de la liste modifiée pendant la boucle (`[:]`).
+- `global_explained.html` : **Le mot global** – lire une variable du jeu, la modifier avec `global`, et pourquoi les listes n'en ont pas besoin.
+
 ### `topdown-shooter/`
 
 - `aim_explained.html` : **Viser un zombie** – comment `atan2` donne l'angle pour que le soldat regarde la cible.

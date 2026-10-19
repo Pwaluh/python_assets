@@ -1,0 +1,497 @@
+<title>Les collisions</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout : plan technique (série « bases », commune à tous les projets).
+   Gauche = l'écran de démonstration, dessiné comme un plan avec son cartouche ; droite = les étapes une à une. Thème volontairement unique (bleu d'architecte). */
+:root {
+  --bg: #0e3567;
+  --bg2: #0b2c57;
+  --panel: #133f76;
+  --line: #4d79b3;
+  --grid: rgba(255, 255, 255, .07);
+  --grid2: rgba(255, 255, 255, .13);
+  --ink: #f1f5ff;
+  --muted: #a9bfe0;
+  --yellow: #ffd23f;   /* cotes et annotations (accent) */
+  --coral: #ff8f6b;
+  --cyan: #7fe3ff;
+  --green: #8cf0a0;
+  --bad: #ff6b6b;
+  --f-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --f-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "Consolas", monospace;
+  color-scheme: dark;
+}
+html { background: var(--bg); }
+* { box-sizing: border-box; }
+body {
+  background-color: var(--bg); color: var(--ink);
+  font-family: var(--f-body); font-size: 17px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 26px 48px;
+  min-height: 100vh;
+  background-image:
+    linear-gradient(var(--grid2) 1px, transparent 1px), linear-gradient(90deg, var(--grid2) 1px, transparent 1px),
+    linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;
+  background-position: -1px -1px;
+  background-attachment: fixed;
+}
+.wrap { max-width: 1180px; margin: 0 auto; }
+@media (min-width: 1400px) { .wrap { max-width: 1400px; } }
+
+header { display: grid; gap: 8px; margin-bottom: 22px; max-width: 62ch; }
+.eyebrow { font-family: var(--f-mono); font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--f-display); font-weight: 700; font-size: clamp(38px, 6.5vw, 64px); line-height: .95; margin: 0; text-transform: uppercase; letter-spacing: .02em; text-wrap: balance; }
+h1 .o { color: var(--yellow); }
+.lede { margin: 0; font-size: 18px; color: var(--muted); }
+.lede b { color: var(--ink); }
+@media (min-width: 901px) {
+  body { padding-block: 20px; }
+  body header { max-width: none; display: flex; flex-wrap: wrap; align-items: flex-end; column-gap: 48px; row-gap: 6px; margin-bottom: 20px; }
+  body header .eyebrow { flex: 1 0 100%; }
+  body header h1 { flex: none; font-size: 54px; }
+  body header .lede { flex: 1 1 420px; max-width: 640px; min-width: 0; font-size: 17px; line-height: 1.5; padding-bottom: 4px; }
+}
+
+.layout { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 36px; align-items: start; }
+@media (max-width: 900px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+/* --- écran / plan --- */
+.stage-col { display: grid; gap: 12px; min-width: 0; }
+.screen { position: relative; border: 2px solid var(--ink); background: var(--bg2); max-width: 100%; outline: 1px solid var(--line); outline-offset: 5px; }
+.screen svg { display: block; width: 100%; height: auto; user-select: none; }
+.screen image { image-rendering: pixelated; }
+.cartouche { position: absolute; right: -2px; bottom: -2px; display: grid; grid-template-columns: auto auto; border: 2px solid var(--ink); background: var(--bg2); font-family: var(--f-mono); font-size: 10.5px; line-height: 1.3; text-transform: uppercase; letter-spacing: .06em; }
+.cartouche span { padding: 3px 8px; border-left: 1px solid var(--line); }
+.cartouche span:first-child { border-left: 0; color: var(--yellow); font-weight: 600; }
+.controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 18px; }
+@media (max-width: 520px) { .controls { grid-template-columns: minmax(0, 1fr); } }
+.ctl { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 2px 10px; font-size: 14px; }
+.ctl label { font-family: var(--f-mono); font-size: 13px; color: var(--muted); }
+.ctl output { font-family: var(--f-mono); font-weight: 600; font-size: 14px; font-variant-numeric: tabular-nums; }
+.ctl input { grid-column: 1 / -1; width: 100%; accent-color: var(--yellow); }
+.ctl input:focus-visible { outline: 2px solid var(--yellow); outline-offset: 3px; }
+.bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.seg { display: inline-flex; border: 2px solid var(--ink); }
+.seg button { font: inherit; font-size: 14px; font-weight: 700; padding: 6px 12px; border: 0; border-right: 2px solid var(--ink); background: transparent; color: var(--ink); cursor: pointer; }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.btn { font: inherit; font-size: 14px; font-weight: 700; background: transparent; color: var(--ink); border: 2px solid var(--ink); padding: 6px 14px; cursor: pointer; }
+.btn:hover { background: rgba(255, 255, 255, .08); }
+.btn.go { background: var(--yellow); color: #1b1600; border-color: var(--yellow); }
+.btn:focus-visible, .seg button:focus-visible, .opt:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+.btn:disabled { opacity: .35; cursor: default; }
+.readout { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.chip { border: 2px solid var(--ink); padding: 8px 12px; display: grid; align-content: center; min-width: 0; min-height: 70px; background: var(--bg2); }
+.chip .k { font-family: var(--f-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chip .v { font-family: var(--f-display); font-size: 28px; font-weight: 700; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.c-y .v { color: var(--yellow); } .c-c .v { color: var(--cyan); } .c-o .v { color: var(--coral); } .c-g .v { color: var(--green); } .c-b .v { color: var(--bad); }
+
+/* --- étapes --- */
+.steps-col { display: grid; gap: 20px; min-width: 0; }
+.steps { display: grid; min-width: 0; align-content: start; }
+.step { display: grid; gap: 12px; align-content: start; }
+.step[hidden] { display: none; }
+.step.enter { animation: enter .3s ease-out; }
+@keyframes enter { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: none; } }
+.step-head { display: flex; align-items: baseline; gap: 12px; border-bottom: 2px solid var(--ink); padding-bottom: 6px; }
+.num { font-family: var(--f-display); font-weight: 700; font-size: 40px; line-height: 1; color: var(--yellow); min-width: 1.2ch; }
+h2 { font-family: var(--f-display); font-weight: 700; font-size: 28px; line-height: 1.1; margin: 0; text-transform: uppercase; letter-spacing: .02em; text-wrap: balance; }
+.step p { margin: 0; max-width: 62ch; }
+.yw { color: var(--yellow); font-weight: 700; } .cw { color: var(--cyan); font-weight: 700; } .ow { color: var(--coral); font-weight: 700; } .gw { color: var(--green); font-weight: 700; } .bw { color: var(--bad); font-weight: 700; }
+.card { border: 2px solid var(--line); background: var(--bg2); padding: 14px 16px; min-width: 0; }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.formula { font-family: var(--f-mono); font-size: 15.5px; display: grid; gap: 4px; overflow-x: auto; font-variant-numeric: tabular-nums; }
+.cmt { color: var(--muted); font-weight: 400; }
+.say { font-style: italic; color: var(--muted); }
+.tbl-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 5px 10px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--f-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 400; }
+td.m { font-family: var(--f-mono); font-weight: 600; white-space: nowrap; }
+pre.code { margin: 0; background: #071f40; color: var(--ink); padding: 14px 16px; font-family: var(--f-mono); font-size: 13.5px; line-height: 1.65; overflow-x: auto; border: 2px solid var(--line); }
+.code .kwd { color: #c9b4ff; } .code .fn { color: var(--yellow); } .code .cm { color: #7f9cc6; } .code .nb { color: var(--coral); } .code .hl { background: rgba(255, 210, 63, .18); outline: 1px solid var(--yellow); }
+.code .er { color: var(--bad); font-weight: 600; } .code .st { color: var(--green); }
+
+.stepnav { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: space-between; border: 2px solid var(--ink); background: var(--bg2); min-height: 70px; padding: 8px 10px; }
+.stepnav .pick { font-family: var(--f-display); font-weight: 700; font-size: 20px; width: 40px; height: 40px; border: 2px solid var(--ink); background: transparent; color: var(--ink); cursor: pointer; display: grid; place-items: center; }
+.stepnav .pick:hover { background: rgba(255, 255, 255, .08); }
+.stepnav .pick[aria-current="step"] { background: var(--yellow); color: #1b1600; border-color: var(--yellow); }
+.stepnav .pick:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+.stepnav .arrow { width: 40px; height: 40px; padding: 0; font-size: 18px; display: grid; place-items: center; }
+
+.opts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.opt { font-family: var(--f-mono); font-size: 16px; font-weight: 600; padding: 10px; border: 2px solid var(--ink); background: transparent; color: var(--ink); cursor: pointer; text-align: left; font-variant-numeric: tabular-nums; }
+.opt:hover:not(:disabled) { background: rgba(255, 255, 255, .08); }
+.opt.ok { background: var(--green); color: #062010; border-color: var(--green); }
+.opt.ko { text-decoration: line-through; opacity: .5; }
+.feedback { min-height: 1.6em; margin: 10px 0 0; font-weight: 700; }
+.score { font-size: 14px; color: var(--muted); }
+
+@media (min-width: 901px) {
+  .layout { align-items: stretch; }
+  .stage-col { display: flex; flex-direction: column; }
+  .readout { margin-top: auto; }
+  .steps-col { contain: size; display: flex; flex-direction: column; gap: 12px; }
+  .steps { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 8px; }
+  .stepnav { flex: none; }
+}
+@media (prefers-reduced-motion: reduce) { .step.enter { animation: none; } }
+@media (min-width: 901px) { .layout { grid-template-columns: minmax(0, .95fr) minmax(0, 1fr); } }
+.seg button { font-size: 13px; padding: 6px 10px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Les bases · Codesters · event_collision</span>
+    <h1>Les <span class="o">collisions</span></h1>
+    <p class="lede">Quand deux sprites se touchent, Codesters appelle une fonction. Mais <b>laquelle</b>, avec <b>quels sprites</b>, et qui doit supprimer quoi ? Une mauvaise réponse, et le jeu plante ou fait n'importe quoi.</p>
+  </header>
+
+  <div class="layout">
+    <div class="stage-col">
+      <div class="screen">
+        <svg id="stage" viewBox="0 0 520 430" role="img" aria-label="Un tir monte vers un alien ; le journal montre les fonctions appelées au moment du contact">
+          <defs>
+            <pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="8" stroke="rgba(127,227,255,.18)" stroke-width="3"/></pattern>
+          </defs>
+          <g id="fond" visibility="hidden">
+            <rect x="12" y="12" width="496" height="236" fill="url(#hatch)" stroke="var(--cyan)" stroke-width="2"/>
+            <text x="22" y="32" font-family="var(--f-mono)" font-size="12" font-weight="600" fill="var(--cyan)">fond (un sprite lui aussi !)</text>
+          </g>
+          <g id="alien">
+            <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACcAAAAeCAYAAACv1gdQAAAA/0lEQVR4nGNkoBIQEVL6D2O/eXePkRpmMlHDEFqBQe04ioIfOSqb7nXAxeuUKuBsSqJ4UIfcoHYcI6m5DFm90TYfghac89oCZ5Nq/qAOuUHtOBZkDq4oxhWVARo2hG3YhmCe89pC0HxkMKhDblA7jhFXlCHnMmJyJakAl/nI4oM65Aa141hwSeAK6tenVMi2TNTsDlbzcYFBHXKD2nEsyIUhciFJTLAjRxNydOMSxwVw1b+DOuQGteNwNmFIbRqRCohpSg3qkBvUjiOq84EcxSIFiNz3ZsIdrOpR9OJQT0yreFCH3KB2HFHRqtHkBo/WG3W7yO6HkmrOoA65Qe04ADnSYetD80Y3AAAAAElFTkSuQmCC" x="-39" y="-30" width="78" height="60"/>
+            <rect id="alienBox" x="-39" y="-30" width="78" height="60" fill="none" stroke="var(--coral)" stroke-width="1.5" stroke-dasharray="5 4"/>
+            <text x="46" y="4" font-family="var(--f-mono)" font-size="12" font-weight="600" fill="var(--coral)">alien</text>
+            <text id="alienEv" x="46" y="20" font-family="var(--f-mono)" font-size="11" fill="var(--yellow)">event_collision ✓</text>
+          </g>
+          <g id="laser">
+            <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAkAAAASCAYAAACJgPRIAAAAQElEQVR4nGNkQALP/v//D2NLMTIywthMDEQAohSxiAgp/ccmgSxOReuQOZMYPpJv0qgiBkZkDnJ8vXl3jwZJBQCziww41dbGUAAAAABJRU5ErkJggg==" x="-9" y="-18" width="18" height="36"/>
+            <rect x="-9" y="-18" width="18" height="36" fill="none" stroke="var(--green)" stroke-width="1.5" stroke-dasharray="4 3"/>
+            <text x="16" y="4" font-family="var(--f-mono)" font-size="12" font-weight="600" fill="var(--green)">laser</text>
+            <text id="laserEv" x="16" y="20" font-family="var(--f-mono)" font-size="11" fill="var(--yellow)">event_collision ✓</text>
+          </g>
+          <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACcAAAAkCAYAAAAKNyObAAABMUlEQVR4nGNkoBIQEVL6D2O/eXePkRpmMlHDEFqBQe04ioIfOSqbDtyFi9c5KMPZlETxoA65Qe04FmoZtGwXtUxCgEEdcoPacSRHK3IO1ahC5NAFER/h7AQGhPiNNmWyC+dBHXKD2nEkF5DI0Xri0jmC6i30jODs0WilFyAqmImJyoQV/HA2cs5FBqRG8aAOuUHtOJRCmBatWWIALnsHdcgNascxIgfpazsVuITooTtYNRBT8BIDkHMuMkB2w6AOuUHtOJTcenfKKgQHKdhxReWug4Sj2M0ee/QhA2TzRZHsHdQhN6gdx0hqEwhXVNblpsDZTZPnYFVDTBRbjEYrFQBKbiUm9yFHHzJArhPrclP+Y1WEI7pxgUEdcoPacSjNIuSciwtQ0pQi1fxBHXKD2nEAdJVgOpR+ZmUAAAAASUVORK5CYII=" x="229" y="200" width="62" height="58"/>
+          <rect id="hitFlash" fill="rgba(255,210,63,.25)" stroke="var(--yellow)" stroke-width="2" visibility="hidden"/>
+          <line x1="0" y1="262" x2="520" y2="262" stroke="var(--line)" stroke-width="2"/>
+          <text x="14" y="282" font-family="var(--f-mono)" font-size="11" letter-spacing="1.5" fill="var(--muted)">JOURNAL DES APPELS</text>
+          <g id="log" font-family="var(--f-mono)" font-size="12.5"></g>
+        </svg>
+        <div class="cartouche"><span>Collisions</span><span>Codesters</span><span>éch. 1:1</span></div>
+      </div>
+      <div class="bar">
+        <div class="seg" role="group" aria-label="Scénario">
+          <button type="button" data-sc="A" aria-pressed="true">1 événement</button>
+          <button type="button" data-sc="B" aria-pressed="false">2 événements</button>
+          <button type="button" data-sc="C" aria-pressed="false">Fond, sans vérifier</button>
+          <button type="button" data-sc="D" aria-pressed="false">Fond, en vérifiant</button>
+        </div>
+        <button class="btn go" id="replayBtn" type="button">↻ Rejouer</button>
+      </div>
+      <div class="readout">
+        <div class="chip c-y"><span class="k">fonctions appelées</span><span class="v" id="vcalls">0</span></div>
+        <div class="chip c-b"><span class="k">suppressions ratées</span><span class="v" id="verr">0</span></div>
+        <div class="chip c-g"><span class="k">résultat</span><span class="v" id="vres">–</span></div>
+      </div>
+    </div>
+
+    <div class="steps-col">
+      <div class="steps" id="steps">
+        <section class="step">
+          <div class="step-head"><span class="num">1</span><h2>Des boîtes qui se touchent</h2></div>
+          <p>Codesters ne regarde pas le dessin exact : il trace une <b>boîte</b> autour de chaque image (les pointillés). Dès que deux boîtes se <b>chevauchent</b>, c'est une collision.</p>
+          <p>Le laser monte. Au moment où sa boîte touche celle de l'alien, Codesters appelle la fonction qu'on a donnée à <span class="mono">event_collision</span>.</p>
+          <p class="say">Les coins transparents de l'image comptent aussi : une collision peut arriver un tout petit peu avant que les dessins se touchent.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">2</span><h2>sprite et hit_sprite</h2></div>
+          <p>La fonction reçoit <b>deux</b> sprites :</p>
+          <div class="card formula">
+            <span><span class="ow">sprite</span>     = celui qui a l'<span class="yw">event_collision</span></span>
+            <span><span class="gw">hit_sprite</span> = l'autre, celui qui l'a touché</span>
+          </div>
+          <pre class="code"><span class="kwd">def</span> <span class="fn">invader_hit</span>(sprite, hit_sprite):
+    <span class="cm"># sprite = l'alien, hit_sprite = le laser</span>
+    ...
+
+alien.<span class="fn">event_collision</span>(invader_hit)</pre>
+          <p>C'est pour ça qu'on sait <b>quel</b> alien est touché, même avec 40 aliens : Codesters nous le donne.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">3</span><h2>Deux événements, deux appels</h2></div>
+          <p>Si l'alien <b>et</b> le laser ont chacun un <span class="mono">event_collision</span>, Codesters appelle <b>les deux</b> fonctions, une pour chacun, avec les rôles inversés :</p>
+          <div class="card formula">
+            <span><span class="fn">invader_hit</span>(sprite = <span class="ow">alien</span>, hit_sprite = <span class="gw">laser</span>)</span>
+            <span><span class="fn">laser_hit</span>(sprite = <span class="gw">laser</span>, hit_sprite = <span class="ow">alien</span>)</span>
+          </div>
+          <p>Choisis <b>2 événements</b> et regarde le journal.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">4</span><h2>Le piège : supprimer deux fois</h2></div>
+          <p>Si les deux fonctions suppriment l'alien <b>et</b> le laser, la première fait le travail… et la deuxième essaie de supprimer des sprites <span class="bw">qui n'existent plus</span>.</p>
+          <p>Selon les cas, ça fait une erreur, ou le jeu se met à faire des choses bizarres (des points comptés deux fois, une liste qui perd un élément de trop).</p>
+          <div class="card"><p>Dans le journal, en mode <b>2 événements</b> : les lignes rouges sont les suppressions ratées.</p></div>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">5</span><h2>Celui qui reçoit le coup gère</h2></div>
+          <p>Une règle simple évite tout ça : <b>seul celui qui reçoit le coup a un event_collision</b>, et c'est lui qui fait tout le travail.</p>
+          <div class="card tbl-wrap">
+            <table>
+              <thead><tr><th>Qui reçoit le coup ?</th><th>Sa fonction</th></tr></thead>
+              <tbody>
+                <tr><td>un alien</td><td class="m">invader_hit</td></tr>
+                <tr><td>le joueur</td><td class="m">player_hit</td></tr>
+                <tr><td>une tuile de bouclier</td><td class="m">tile_hit</td></tr>
+                <tr><td>le boss</td><td class="m">boss_hit</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Les tirs, eux, n'ont pas d'événement : ils se font supprimer par ce qu'ils touchent.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">6</span><h2>Tout peut toucher</h2></div>
+          <p>Le fond, les boucliers, les autres aliens… tout est un sprite, et <b>tout peut provoquer une collision</b>. Le laser apparaît <b>sur</b> le fond : il le touche dès sa création !</p>
+          <div class="card"><p>Choisis <b>Fond, sans vérifier</b> : la fonction supprime ce qu'elle touche… et <span class="bw">le fond disparaît</span>. Puis <b>Fond, en vérifiant</b>.</p></div>
+          <p>On vérifie donc toujours <b>ce qui</b> nous touche, avant d'agir :</p>
+          <div class="card formula"><span><span class="kwd">if</span> hit_sprite <span class="kwd">in</span> player_lasers:</span></div>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">7</span><h2>Dans Codesters</h2></div>
+          <pre class="code"><span class="kwd">def</span> <span class="fn">invader_hit</span>(sprite, hit_sprite):
+    <span class="cm"># sprite = l'alien touché, hit_sprite = ce qui le touche</span>
+    <span class="kwd">if</span> hit_sprite <span class="kwd">in</span> player_lasers:     <span class="cm"># seulement un tir du joueur</span>
+        invaders.<span class="fn">remove</span>(sprite)
+        stage.<span class="fn">remove_sprite</span>(sprite)
+        player_lasers.<span class="fn">remove</span>(hit_sprite)
+        stage.<span class="fn">remove_sprite</span>(hit_sprite)
+
+<span class="cm"># l'événement, sur celui qui reçoit le coup :</span>
+invader.<span class="fn">event_collision</span>(invader_hit)
+<span class="cm"># le laser, lui, n'a PAS d'event_collision</span></pre>
+        </section>
+        <section class="step">
+          <div class="step-head"><span class="num">★</span><h2>Défi</h2></div>
+          <div class="card">
+            <div id="qvisual"></div>
+            <p style="margin:0 0 12px" id="qtext"></p>
+            <div class="opts" id="opts"></div>
+            <p class="feedback" id="qfb" aria-live="polite"></p>
+            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+              <button class="btn" id="qnext" type="button">Question suivante</button>
+              <span class="score" id="qscore">Score : 0 / 0</span>
+            </div>
+          </div>
+        </section>
+      </div>
+      <nav class="stepnav" id="stepnav" aria-label="Étapes">
+        <button class="btn arrow" id="prevStep" type="button" aria-label="Étape précédente" title="Précédent">←</button>
+        <span id="picks" style="display:flex;gap:6px;flex-wrap:wrap"></span>
+        <button class="btn arrow" id="nextStep" type="button" aria-label="Étape suivante" title="Suivant">→</button>
+      </nav>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const NS = 'http://www.w3.org/2000/svg';
+const REDUCE = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const fr = (n, d = 0) => { let s = (Math.round(n * 10 ** d) / 10 ** d).toFixed(d).replace('.', ',').replace(/^-/, '−'); if (/^−0(,0+)?$/.test(s)) s = s.slice(1); return s; };
+const PAGE = { onStep() {}, quiz: null, afterFit() {} };
+(() => {
+  const ALIEN = { x: 260, y: 70, w: 78, h: 60 }, LASER0 = { x: 260, y: 196 };
+  const FOND = { x: 260, y: 130, w: 496, h: 236 };
+  let sc = 'A', lx = LASER0.x, ly = LASER0.y, alive = {}, lines = [], calls = 0, errs = 0, ignored = 0, done = false, hitAt = null, raf = null, pauseUntil = 0;
+
+  // qui a un event_collision, et ce que fait sa fonction, pour chaque scénario
+  const SC = {
+    A: { fond: false, alienEv: true, laserEv: false, check: true },
+    B: { fond: false, alienEv: true, laserEv: true, check: false },
+    C: { fond: true, alienEv: false, laserEv: true, check: false },
+    D: { fond: true, alienEv: true, laserEv: false, check: true },
+  };
+  const NAME = { alien: 'invader_hit', laser: 'laser_hit' };
+
+  function reset() {
+    lx = LASER0.x; ly = LASER0.y; alive = { alien: true, laser: true, fond: SC[sc].fond };
+    lines = []; calls = 0; errs = 0; ignored = 0; done = false; hitAt = null; pauseUntil = 0;
+    $('hitFlash').setAttribute('visibility', 'hidden');
+  }
+  const box = n => n === 'alien' ? { x: ALIEN.x, y: ALIEN.y, w: ALIEN.w, h: ALIEN.h } : n === 'laser' ? { x: lx, y: ly, w: 18, h: 36 } : FOND;
+  const overlap = (a, b) => Math.abs(a.x - b.x) * 2 < a.w + b.w && Math.abs(a.y - b.y) * 2 < a.h + b.h;
+
+  function removeSprite(n) {
+    if (alive[n]) { alive[n] = false; lines.push({ t: `   stage.remove_sprite(${n}) ✓`, c: 'var(--ink)' }); }
+    else { errs++; lines.push({ t: `   stage.remove_sprite(${n}) ✗ déjà supprimé !`, c: 'var(--bad)' }); }
+  }
+  function call(owner, other) {
+    const cfg = SC[sc];
+    calls++;
+    if (cfg.check && other !== 'laser') {
+      if (!alive[owner]) { calls--; return; }   // déjà supprimé plus tôt dans ce même contact
+      ignored++;
+      const last = lines[lines.length - 1];
+      const txt = n => `▶ ${NAME[owner]}(sprite=${owner}, hit_sprite=${other}) → ignoré ×${n}`;
+      if (last && last.key === owner + other) { last.n++; last.t = txt(last.n); }
+      else lines.push({ t: txt(1), c: 'var(--muted)', key: owner + other, n: 1 });
+      return;
+    }
+    lines.push({ t: `▶ ${NAME[owner]}(sprite=${owner}, hit_sprite=${other})`, c: 'var(--yellow)' });
+    removeSprite(owner);
+    removeSprite(other);
+  }
+
+  function collide() {
+    // Codesters regarde chaque paire qui se touche et appelle l'événement de CHACUN des deux
+    const cfg = SC[sc];
+    const names = ['alien', 'laser', 'fond'].filter(n => alive[n]);
+    const pairs = [];
+    for (let i = 0; i < names.length; i++) for (let j = i + 1; j < names.length; j++) if (overlap(box(names[i]), box(names[j]))) pairs.push([names[i], names[j]]);
+    pairs.forEach(([a, b]) => {
+      if (a === 'laser' && b === 'alien' || a === 'alien' && b === 'laser') if (!hitAt) hitAt = { x: lx, y: (ly + ALIEN.y) / 2 };
+      // l'ordre des appels : d'abord l'alien, puis le laser (on ne sait pas lequel Codesters choisit)
+      const order = [a, b].sort((p, q) => (p === 'alien' ? -1 : 1) - (q === 'alien' ? -1 : 1));
+      order.forEach(owner => {
+        const other = owner === a ? b : a;
+        const has = owner === 'alien' ? cfg.alienEv : owner === 'laser' ? cfg.laserEv : false;
+        // les deux appels d'une même collision partent, même si le premier a déjà tout supprimé : c'est le piège
+        if (has) call(owner, other);
+      });
+    });
+  }
+
+  function frame(t) {
+    if (!done) {
+      if (alive.laser) ly -= REDUCE ? 6 : 2.4;
+      if (!pauseUntil) collide();
+      if (!alive.laser || ly < -20) { done = true; pauseUntil = t + 2600; }
+    } else if (t > pauseUntil) reset();
+    draw();
+    raf = requestAnimationFrame(frame);
+  }
+
+  function draw() {
+    const cfg = SC[sc];
+    $('fond').setAttribute('visibility', alive.fond ? 'visible' : 'hidden');
+    $('alien').setAttribute('transform', `translate(${ALIEN.x} ${ALIEN.y})`);
+    $('alien').setAttribute('visibility', alive.alien ? 'visible' : 'hidden');
+    $('laser').setAttribute('transform', `translate(${lx} ${ly})`);
+    $('laser').setAttribute('visibility', alive.laser ? 'visible' : 'hidden');
+    $('alienEv').textContent = cfg.alienEv ? 'event_collision ✓' : 'pas d\'événement';
+    $('alienEv').setAttribute('fill', cfg.alienEv ? 'var(--yellow)' : 'var(--muted)');
+    $('laserEv').textContent = cfg.laserEv ? 'event_collision ✓' : 'pas d\'événement';
+    $('laserEv').setAttribute('fill', cfg.laserEv ? 'var(--yellow)' : 'var(--muted)');
+    if (hitAt) { const f = $('hitFlash'); f.setAttribute('x', hitAt.x - 26); f.setAttribute('y', hitAt.y - 20); f.setAttribute('width', 52); f.setAttribute('height', 40); f.setAttribute('visibility', done ? 'visible' : 'hidden'); }
+    // journal (les 8 dernières lignes)
+    const shown = lines.slice(-8);
+    $('log').innerHTML = shown.map((l, i) => `<text x="14" y="${304 + i * 15.5}" fill="${l.c}" xml:space="preserve">${l.t.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</text>`).join('')
+      || `<text x="14" y="304" fill="var(--muted)">… le laser monte, pas encore de contact</text>`;
+    $('vcalls').textContent = calls;
+    $('verr').textContent = errs;
+    let res = '–';
+    if (done || !alive.fond && cfg.fond) {
+      if (cfg.fond && !alive.fond) res = 'fond effacé !';
+      else if (errs) res = 'bug';
+      else if (!alive.alien) res = 'OK';
+      else res = '–';
+    }
+    $('vres').textContent = res;
+    $('vres').style.color = res === 'OK' ? 'var(--green)' : res === '–' ? 'var(--muted)' : 'var(--bad)';
+  }
+
+  function setSc(s) {
+    sc = s; document.querySelectorAll('.seg button').forEach(x => x.setAttribute('aria-pressed', x.dataset.sc === s)); reset(); draw();
+  }
+  document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => setSc(b.dataset.sc)));
+  $('replayBtn').addEventListener('click', () => { reset(); draw(); });
+
+  PAGE.onStep = i => {
+    const auto = ['A', 'A', 'B', 'B', 'A', 'C', 'D'];
+    if (auto[i] && auto[i] !== sc) setSc(auto[i]);
+  };
+
+  // défi
+  let lastK = -1;
+  PAGE.quiz = () => {
+    const qs = [
+      { text: 'Le joueur a un <span class="mono">event_collision(player_hit)</span>. Un tir alien le touche. Dans <span class="mono">player_hit</span>, que vaut <span class="mono">sprite</span> ?', ans: 'le joueur', opts: ['le joueur', 'le tir alien', 'le fond', 'rien'], why: 'sprite, c\'est toujours celui qui porte l\'event_collision.' },
+      { text: 'Même situation : que vaut <span class="mono">hit_sprite</span> ?', ans: 'le tir alien', opts: ['le joueur', 'le tir alien', 'l\'alien qui a tiré', 'le fond'], why: 'hit_sprite, c\'est l\'autre : celui qui a touché.' },
+      { text: 'Un tir et un alien ont <b>chacun</b> un event_collision. Ils se touchent. Combien de fonctions sont appelées ?', ans: '2', opts: ['1', '2', '0', '4'], why: 'Une pour chacun des deux sprites, avec les rôles inversés.' },
+      { text: 'Pourquoi tester <span class="mono">if hit_sprite in player_lasers</span> dans <span class="mono">invader_hit</span> ?', ans: 'tout peut toucher l\'alien', opts: ['tout peut toucher l\'alien', 'pour aller plus vite', 'sinon Python plante', 'pour compter les points'], why: 'Le fond, les autres aliens, les tirs ennemis… sont aussi des sprites qui le touchent.' },
+      { text: 'Dans un tir du joueur qui touche un alien, qui devrait avoir l\'event_collision ?', ans: 'l\'alien', opts: ['l\'alien', 'le tir', 'les deux', 'le fond'], why: 'Celui qui reçoit le coup gère : l\'alien supprime le tir et se supprime.' },
+    ];
+    let k; do { k = Math.floor(Math.random() * qs.length); } while (k === lastK); lastK = k;
+    return qs[k];
+  };
+
+  reset(); draw(); raf = requestAnimationFrame(frame);
+})();
+(() => {
+  // ----- étapes -----
+  const steps = [...document.querySelectorAll('#steps .step')];
+  let cur = 0;
+  $('picks').innerHTML = steps.map((s, i) => `<button class="pick" type="button" data-i="${i}" aria-label="Étape ${s.querySelector('.num').textContent}">${s.querySelector('.num').textContent}</button>`).join('');
+  function showStep(i, anim = true) {
+    cur = Math.max(0, Math.min(steps.length - 1, i));
+    steps.forEach((s, k) => { s.hidden = k !== cur; s.classList.remove('enter'); });
+    if (anim && !REDUCE) { void steps[cur].offsetWidth; steps[cur].classList.add('enter'); }
+    $('picks').querySelectorAll('.pick').forEach((b, k) => { if (k === cur) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current'); });
+    $('prevStep').disabled = cur === 0; $('nextStep').disabled = cur === steps.length - 1;
+    PAGE.onStep(cur, steps.length);
+  }
+  $('picks').addEventListener('click', e => { const b = e.target.closest('.pick'); if (b) showStep(+b.dataset.i); });
+  $('prevStep').addEventListener('click', () => showStep(cur - 1));
+  $('nextStep').addEventListener('click', () => showStep(cur + 1));
+  document.addEventListener('keydown', e => {
+    if (e.target.closest('input, select, textarea')) return;
+    if (e.key === 'ArrowRight') showStep(cur + 1); if (e.key === 'ArrowLeft') showStep(cur - 1);
+  });
+
+  // ----- défi -----
+  let q = null, answered = false, score = 0, total = 0;
+  function nextQ() {
+    q = PAGE.quiz(); answered = false;
+    $('qtext').innerHTML = q.text;
+    $('qvisual').innerHTML = q.visual || '';
+    const opts = [...new Set(q.opts)].sort(() => Math.random() - .5);
+    $('opts').innerHTML = opts.map(v => `<button class="opt" type="button">${v}</button>`).join('');
+    $('qfb').textContent = '';
+  }
+  $('opts').addEventListener('click', e => {
+    const b = e.target.closest('.opt'); if (!b || answered) return;
+    answered = true; total++;
+    const ok = b.textContent === q.ans; if (ok) score++;
+    $('opts').querySelectorAll('.opt').forEach(o => { o.disabled = true; if (o.textContent === q.ans) o.classList.add('ok'); else if (o === b) o.classList.add('ko'); });
+    $('qfb').textContent = (ok ? 'Bien vu ! ' : 'Pas tout à fait. ') + q.why;
+    $('qfb').style.color = ok ? 'var(--green)' : 'var(--bad)';
+    $('qscore').textContent = `Score : ${score} / ${total}`;
+  });
+  $('qnext').addEventListener('click', nextQ);
+
+  // ----- hauteur : pas de défilement à droite -----
+  const deskMQ = window.matchMedia('(min-width: 901px)');
+  function fitHeight() {
+    const col = document.querySelector('.stage-col');
+    col.style.minHeight = '';
+    if (!deskMQ.matches) return;
+    const box = $('steps'); let max = 0;
+    steps.forEach((s, k) => { steps.forEach((o, j) => o.hidden = j !== k); max = Math.max(max, box.scrollHeight); });
+    steps.forEach((o, j) => o.hidden = j !== cur);
+    col.style.minHeight = Math.ceil(max + 12 + $('stepnav').offsetHeight) + 'px';
+  }
+  showStep(0, false); nextQ(); fitHeight();
+  window.addEventListener('resize', fitHeight);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitHeight);
+})();
+</script>

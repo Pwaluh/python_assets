@@ -1,0 +1,526 @@
+<title>Les listes vivantes</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout : plan technique (série « bases », commune à tous les projets).
+   Gauche = l'écran de démonstration, dessiné comme un plan avec son cartouche ; droite = les étapes une à une. Thème volontairement unique (bleu d'architecte). */
+:root {
+  --bg: #0e3567;
+  --bg2: #0b2c57;
+  --panel: #133f76;
+  --line: #4d79b3;
+  --grid: rgba(255, 255, 255, .07);
+  --grid2: rgba(255, 255, 255, .13);
+  --ink: #f1f5ff;
+  --muted: #a9bfe0;
+  --yellow: #ffd23f;   /* cotes et annotations (accent) */
+  --coral: #ff8f6b;
+  --cyan: #7fe3ff;
+  --green: #8cf0a0;
+  --bad: #ff6b6b;
+  --f-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --f-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "Consolas", monospace;
+  color-scheme: dark;
+}
+html { background: var(--bg); }
+* { box-sizing: border-box; }
+body {
+  background-color: var(--bg); color: var(--ink);
+  font-family: var(--f-body); font-size: 17px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 26px 48px;
+  min-height: 100vh;
+  background-image:
+    linear-gradient(var(--grid2) 1px, transparent 1px), linear-gradient(90deg, var(--grid2) 1px, transparent 1px),
+    linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;
+  background-position: -1px -1px;
+  background-attachment: fixed;
+}
+.wrap { max-width: 1180px; margin: 0 auto; }
+@media (min-width: 1400px) { .wrap { max-width: 1400px; } }
+
+header { display: grid; gap: 8px; margin-bottom: 22px; max-width: 62ch; }
+.eyebrow { font-family: var(--f-mono); font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--f-display); font-weight: 700; font-size: clamp(38px, 6.5vw, 64px); line-height: .95; margin: 0; text-transform: uppercase; letter-spacing: .02em; text-wrap: balance; }
+h1 .o { color: var(--yellow); }
+.lede { margin: 0; font-size: 18px; color: var(--muted); }
+.lede b { color: var(--ink); }
+@media (min-width: 901px) {
+  body { padding-block: 20px; }
+  body header { max-width: none; display: flex; flex-wrap: wrap; align-items: flex-end; column-gap: 48px; row-gap: 6px; margin-bottom: 20px; }
+  body header .eyebrow { flex: 1 0 100%; }
+  body header h1 { flex: none; font-size: 54px; }
+  body header .lede { flex: 1 1 420px; max-width: 640px; min-width: 0; font-size: 17px; line-height: 1.5; padding-bottom: 4px; }
+}
+
+.layout { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 36px; align-items: start; }
+@media (max-width: 900px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+/* --- écran / plan --- */
+.stage-col { display: grid; gap: 12px; min-width: 0; }
+.screen { position: relative; border: 2px solid var(--ink); background: var(--bg2); max-width: 100%; outline: 1px solid var(--line); outline-offset: 5px; }
+.screen svg { display: block; width: 100%; height: auto; user-select: none; }
+.screen image { image-rendering: pixelated; }
+.cartouche { position: absolute; right: -2px; bottom: -2px; display: grid; grid-template-columns: auto auto; border: 2px solid var(--ink); background: var(--bg2); font-family: var(--f-mono); font-size: 10.5px; line-height: 1.3; text-transform: uppercase; letter-spacing: .06em; }
+.cartouche span { padding: 3px 8px; border-left: 1px solid var(--line); }
+.cartouche span:first-child { border-left: 0; color: var(--yellow); font-weight: 600; }
+.controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 18px; }
+@media (max-width: 520px) { .controls { grid-template-columns: minmax(0, 1fr); } }
+.ctl { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 2px 10px; font-size: 14px; }
+.ctl label { font-family: var(--f-mono); font-size: 13px; color: var(--muted); }
+.ctl output { font-family: var(--f-mono); font-weight: 600; font-size: 14px; font-variant-numeric: tabular-nums; }
+.ctl input { grid-column: 1 / -1; width: 100%; accent-color: var(--yellow); }
+.ctl input:focus-visible { outline: 2px solid var(--yellow); outline-offset: 3px; }
+.bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.seg { display: inline-flex; border: 2px solid var(--ink); }
+.seg button { font: inherit; font-size: 14px; font-weight: 700; padding: 6px 12px; border: 0; border-right: 2px solid var(--ink); background: transparent; color: var(--ink); cursor: pointer; }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.btn { font: inherit; font-size: 14px; font-weight: 700; background: transparent; color: var(--ink); border: 2px solid var(--ink); padding: 6px 14px; cursor: pointer; }
+.btn:hover { background: rgba(255, 255, 255, .08); }
+.btn.go { background: var(--yellow); color: #1b1600; border-color: var(--yellow); }
+.btn:focus-visible, .seg button:focus-visible, .opt:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+.btn:disabled { opacity: .35; cursor: default; }
+.readout { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.chip { border: 2px solid var(--ink); padding: 8px 12px; display: grid; align-content: center; min-width: 0; min-height: 70px; background: var(--bg2); }
+.chip .k { font-family: var(--f-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chip .v { font-family: var(--f-display); font-size: 28px; font-weight: 700; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.c-y .v { color: var(--yellow); } .c-c .v { color: var(--cyan); } .c-o .v { color: var(--coral); } .c-g .v { color: var(--green); } .c-b .v { color: var(--bad); }
+
+/* --- étapes --- */
+.steps-col { display: grid; gap: 20px; min-width: 0; }
+.steps { display: grid; min-width: 0; align-content: start; }
+.step { display: grid; gap: 12px; align-content: start; }
+.step[hidden] { display: none; }
+.step.enter { animation: enter .3s ease-out; }
+@keyframes enter { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: none; } }
+.step-head { display: flex; align-items: baseline; gap: 12px; border-bottom: 2px solid var(--ink); padding-bottom: 6px; }
+.num { font-family: var(--f-display); font-weight: 700; font-size: 40px; line-height: 1; color: var(--yellow); min-width: 1.2ch; }
+h2 { font-family: var(--f-display); font-weight: 700; font-size: 28px; line-height: 1.1; margin: 0; text-transform: uppercase; letter-spacing: .02em; text-wrap: balance; }
+.step p { margin: 0; max-width: 62ch; }
+.yw { color: var(--yellow); font-weight: 700; } .cw { color: var(--cyan); font-weight: 700; } .ow { color: var(--coral); font-weight: 700; } .gw { color: var(--green); font-weight: 700; } .bw { color: var(--bad); font-weight: 700; }
+.card { border: 2px solid var(--line); background: var(--bg2); padding: 14px 16px; min-width: 0; }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.formula { font-family: var(--f-mono); font-size: 15.5px; display: grid; gap: 4px; overflow-x: auto; font-variant-numeric: tabular-nums; }
+.cmt { color: var(--muted); font-weight: 400; }
+.say { font-style: italic; color: var(--muted); }
+.tbl-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 5px 10px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--f-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 400; }
+td.m { font-family: var(--f-mono); font-weight: 600; white-space: nowrap; }
+pre.code { margin: 0; background: #071f40; color: var(--ink); padding: 14px 16px; font-family: var(--f-mono); font-size: 13.5px; line-height: 1.65; overflow-x: auto; border: 2px solid var(--line); }
+.code .kwd { color: #c9b4ff; } .code .fn { color: var(--yellow); } .code .cm { color: #7f9cc6; } .code .nb { color: var(--coral); } .code .hl { background: rgba(255, 210, 63, .18); outline: 1px solid var(--yellow); }
+.code .er { color: var(--bad); font-weight: 600; } .code .st { color: var(--green); }
+
+.stepnav { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: space-between; border: 2px solid var(--ink); background: var(--bg2); min-height: 70px; padding: 8px 10px; }
+.stepnav .pick { font-family: var(--f-display); font-weight: 700; font-size: 20px; width: 40px; height: 40px; border: 2px solid var(--ink); background: transparent; color: var(--ink); cursor: pointer; display: grid; place-items: center; }
+.stepnav .pick:hover { background: rgba(255, 255, 255, .08); }
+.stepnav .pick[aria-current="step"] { background: var(--yellow); color: #1b1600; border-color: var(--yellow); }
+.stepnav .pick:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+.stepnav .arrow { width: 40px; height: 40px; padding: 0; font-size: 18px; display: grid; place-items: center; }
+
+.opts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.opt { font-family: var(--f-mono); font-size: 16px; font-weight: 600; padding: 10px; border: 2px solid var(--ink); background: transparent; color: var(--ink); cursor: pointer; text-align: left; font-variant-numeric: tabular-nums; }
+.opt:hover:not(:disabled) { background: rgba(255, 255, 255, .08); }
+.opt.ok { background: var(--green); color: #062010; border-color: var(--green); }
+.opt.ko { text-decoration: line-through; opacity: .5; }
+.feedback { min-height: 1.6em; margin: 10px 0 0; font-weight: 700; }
+.score { font-size: 14px; color: var(--muted); }
+
+@media (min-width: 901px) {
+  .layout { align-items: stretch; }
+  .stage-col { display: flex; flex-direction: column; }
+  .readout { margin-top: auto; }
+  .steps-col { contain: size; display: flex; flex-direction: column; gap: 12px; }
+  .steps { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 8px; }
+  .stepnav { flex: none; }
+}
+@media (prefers-reduced-motion: reduce) { .step.enter { animation: none; } }
+@media (min-width: 901px) { .layout { grid-template-columns: minmax(0, .95fr) minmax(0, 1fr); } }
+.screen svg .al { cursor: pointer; }
+.btnrow { display: flex; flex-wrap: wrap; gap: 8px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Les bases · Python · listes de sprites</span>
+    <h1>Les listes <span class="o">vivantes</span></h1>
+    <p class="lede">Dans un jeu, une liste <b>change tout le temps</b> : des aliens naissent, d'autres explosent. On range à la création, on retire à la destruction, et on fait attention en la parcourant.</p>
+  </header>
+
+  <div class="layout">
+    <div class="stage-col">
+      <div class="screen">
+        <svg id="stage" viewBox="0 0 520 440" role="img" aria-label="En haut, les aliens sur l'écran ; en bas, la liste invaders et sa copie">
+          <text x="14" y="22" font-family="var(--f-mono)" font-size="11" letter-spacing="1.5" fill="var(--muted)">L'ÉCRAN — clique sur un alien pour le toucher</text>
+          <g id="screenRow"></g>
+          <text id="status" x="14" y="186" font-family="var(--f-body)" font-weight="700" font-size="14"></text>
+          <line x1="0" y1="200" x2="520" y2="200" stroke="var(--line)" stroke-width="2"/>
+          <g id="listArea"></g>
+        </svg>
+        <div class="cartouche"><span>Les listes</span><span>Codesters</span><span>éch. 1:1</span></div>
+      </div>
+      <div class="bar">
+        <div class="btnrow">
+          <button class="btn" id="addBtn" type="button">＋ Créer un alien</button>
+          <button class="btn go" id="delBtn" type="button">Supprimer les touchés</button>
+          <button class="btn" id="moveBtn" type="button">Faire descendre</button>
+          <button class="btn" id="resetBtn" type="button">↺</button>
+        </div>
+      </div>
+      <div class="bar">
+        <div class="seg" role="group" aria-label="Que parcourt la boucle ?">
+          <button type="button" data-loop="list" aria-pressed="false">for a in invaders</button>
+          <button type="button" data-loop="copy" aria-pressed="true">for a in invaders[:]</button>
+        </div>
+        <div class="seg" role="group" aria-label="Retire-t-on de la liste ?">
+          <button type="button" data-rm="yes" aria-pressed="true">remove ✓</button>
+          <button type="button" data-rm="no" aria-pressed="false">remove oublié</button>
+        </div>
+      </div>
+      <div class="readout">
+        <div class="chip c-y"><span class="k">len(invaders)</span><span class="v" id="vlen">0</span></div>
+        <div class="chip c-c"><span class="k">aliens à l'écran</span><span class="v" id="vscr">0</span></div>
+        <div class="chip c-o"><span class="k">boucle</span><span class="v" id="vloop">–</span></div>
+      </div>
+    </div>
+
+    <div class="steps-col">
+      <div class="steps" id="steps">
+        <section class="step">
+          <div class="step-head"><span class="num">1</span><h2>Une étagère numérotée</h2></div>
+          <p>Une liste, c'est une étagère avec des cases <b>numérotées à partir de 0</b>. Chaque case contient un sprite.</p>
+          <div class="card formula">
+            <span>invaders[0]       <span class="cmt"># le premier</span></span>
+            <span>len(invaders)     <span class="cmt"># combien il y en a</span></span>
+          </div>
+          <p>En haut, les aliens sur l'écran, avec leur <b>numéro dans la liste</b>. En bas, la liste elle-même.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">2</span><h2>Ranger à la création</h2></div>
+          <p>Quand on crée un sprite qu'on devra retrouver, on le range <b>tout de suite</b> au bout de la liste :</p>
+          <div class="card formula">
+            <span>alien = codesters.Sprite(...)</span>
+            <span>invaders.<span class="yw">append</span>(alien)</span>
+          </div>
+          <p>Clique sur <b>＋ Créer un alien</b> : il apparaît à l'écran <b>et</b> dans une nouvelle case au bout de l'étagère.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">3</span><h2>Retirer à la destruction</h2></div>
+          <p>Quand un alien explose, on le retire de l'écran <b>et</b> de la liste :</p>
+          <div class="card formula">
+            <span>stage.remove_sprite(alien)</span>
+            <span>invaders.<span class="yw">remove</span>(alien)</span>
+          </div>
+          <p>Choisis <b>remove oublié</b>, touche un alien, puis <b>Supprimer les touchés</b> : il disparaît de l'écran, mais sa case reste. C'est un <span class="bw">fantôme</span> : la liste compte un alien qui n'existe plus.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">4</span><h2>Parcourir la liste</h2></div>
+          <p>Pour faire quelque chose à <b>tous</b> les aliens, on parcourt la liste :</p>
+          <pre class="code"><span class="kwd">for</span> alien <span class="kwd">in</span> invaders:
+    alien.<span class="fn">set_y</span>(alien.<span class="fn">get_y</span>() - <span class="nb">10</span>)</pre>
+          <p>Clique sur <b>Faire descendre</b>. S'il y a un fantôme dans la liste, la boucle essaie de déplacer un sprite <span class="bw">supprimé</span> : c'est là que le jeu plante.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">5</span><h2>Le piège : retirer en parcourant</h2></div>
+          <p>Choisis <b>for a in invaders</b>, touche <b>deux aliens côte à côte</b>, puis <b>Supprimer les touchés</b>.</p>
+          <p>Quand la boucle retire la case <b>2</b>, toutes les cases suivantes <b>reculent d'une place</b>. L'alien qui était en 3 passe en 2… mais la boucle, elle, passe à la case 3. Elle <span class="bw">saute</span> un alien !</p>
+          <p class="say">Regarde la flèche : elle avance toujours d'une case, même quand l'étagère se tasse.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">6</span><h2>La solution : une copie</h2></div>
+          <p>On parcourt une <b>copie</b> de la liste, et on retire dans la vraie :</p>
+          <div class="card formula"><span><span class="kwd">for</span> alien <span class="kwd">in</span> invaders<span class="yw">[:]</span>:</span></div>
+          <p><span class="mono">[:]</span> fait une photo de la liste. La photo ne bouge pas pendant la boucle, donc aucune case n'est sautée. Choisis <b>for a in invaders[:]</b> et recommence.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">7</span><h2>Dans Codesters</h2></div>
+          <pre class="code">invaders = []
+
+<span class="cm"># créer : on range</span>
+alien = codesters.Sprite(<span class="st">"alien_orbe"</span>, x, y)
+invaders.<span class="fn">append</span>(alien)
+
+<span class="cm"># détruire : on retire des deux côtés</span>
+invaders.<span class="fn">remove</span>(alien)
+stage.<span class="fn">remove_sprite</span>(alien)
+
+<span class="cm"># parcourir en retirant : sur une copie</span>
+<span class="kwd">for</span> laser <span class="kwd">in</span> player_lasers[:]:
+    <span class="kwd">if</span> laser.<span class="fn">get_y</span>() &gt; <span class="nb">260</span>:
+        player_lasers.<span class="fn">remove</span>(laser)
+        stage.<span class="fn">remove_sprite</span>(laser)
+
+<span class="cm"># tout le monde est mort ?</span>
+<span class="kwd">if</span> <span class="fn">len</span>(invaders) == <span class="nb">0</span>:
+    ...</pre>
+        </section>
+        <section class="step">
+          <div class="step-head"><span class="num">★</span><h2>Défi</h2></div>
+          <div class="card">
+            <div id="qvisual"></div>
+            <p style="margin:0 0 12px" id="qtext"></p>
+            <div class="opts" id="opts"></div>
+            <p class="feedback" id="qfb" aria-live="polite"></p>
+            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+              <button class="btn" id="qnext" type="button">Question suivante</button>
+              <span class="score" id="qscore">Score : 0 / 0</span>
+            </div>
+          </div>
+        </section>
+      </div>
+      <nav class="stepnav" id="stepnav" aria-label="Étapes">
+        <button class="btn arrow" id="prevStep" type="button" aria-label="Étape précédente" title="Précédent">←</button>
+        <span id="picks" style="display:flex;gap:6px;flex-wrap:wrap"></span>
+        <button class="btn arrow" id="nextStep" type="button" aria-label="Étape suivante" title="Suivant">→</button>
+      </nav>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const NS = 'http://www.w3.org/2000/svg';
+const REDUCE = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const fr = (n, d = 0) => { let s = (Math.round(n * 10 ** d) / 10 ** d).toFixed(d).replace('.', ',').replace(/^-/, '−'); if (/^−0(,0+)?$/.test(s)) s = s.slice(1); return s; };
+const PAGE = { onStep() {}, quiz: null, afterFit() {} };
+(() => {
+  const IMG = { orbe: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAAeCAYAAABE4bxTAAAA5klEQVR4nGNkIBGICCn9J0X9m3f3GElRz0Sac2gPBp2DcAYnrqjZUHWXJAsC2pSxiuOKykEXQoPOQSjBhhxNTXa74OJ6NtiDnVRw6QgiuusOucHZyNE36EJo0DmIhRhFhpnUsezSEcJqBl0IDToHseDKWcQAaWlZrOJPnz4mqBfZrrpDbnA3DLoQGnUQITDqIEKAqLrs3CNEiTbxcDxJFuTbLoSzjeRs4OzRuoxcQFSUUQvgiiZkMOhCaNA5CGcjP8VoAdZG/pxzCYzUVoMMBl0IDToHoQQbcvDiClJaqxl0ITToHAQApytRKmZ6J6YAAAAASUVORK5CYII=", meduse: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAAeCAYAAABE4bxTAAAA/klEQVR4nGNkIAKICCn9J0YdIfDm3T1GQmqYqGERNcGgcxBKEOKKmmn37lLFsiwlZaziyFE56EJo0DmIETmaNLYdgUvkaUhi1TDpxnOSLCDGnBteNnD2oAuhQecgFlwSuKLmiocZnK2z4xRBC9IUZElSP+hCaNA5CGcuozU4YiEFLwyR3TDoQmjQOQglyrgKOgbEEd8mVMDZgy6EBp2DWJCrfjkGBnj0ybkh6pdHuxC5j1riyGC0+UEKwFmXIYNHdWFILctVWKMVuaCTa1qFteWJag52MOhCaNA5CGcQ2px4Bg925OighRpkMOhCaNA5CCUIByqakMGgC6FB5yAA+L5aWf1VfzEAAAAASUVORK5CYII=", drone: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACcAAAAeCAYAAACv1gdQAAAA/0lEQVR4nGNkoBIQEVL6D2O/eXePkRpmMlHDEFqBQe04ioIfOSqb7nXAxeuUKuBsSqJ4UIfcoHYcI6m5DFm90TYfghac89oCZ5Nq/qAOuUHtOBZkDq4oxhWVARo2hG3YhmCe89pC0HxkMKhDblA7jhFXlCHnMmJyJakAl/nI4oM65Aa141hwSeAK6tenVMi2TNTsDlbzcYFBHXKD2nEsyIUhciFJTLAjRxNydOMSxwVw1b+DOuQGteNwNmFIbRqRCohpSg3qkBvUjiOq84EcxSIFiNz3ZsIdrOpR9OJQT0yreFCH3KB2HFHRqtHkBo/WG3W7yO6HkmrOoA65Qe04ADnSYetD80Y3AAAAAElFTkSuQmCC" };
+  const BOOM = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACcAAAAhCAYAAABa+rIoAAAAuklEQVR4nO2XMQ5AQBBFl9JJNJxF7SQqhcpJ1M5C4yTa1Zm/iQm7EvmRedUmZtbP/5ldnDN+SBbb4LvSn83jdtsfW4/kcdK+hVpcYPObyFxbyoNpkxe8iJ7aOWpxquVBZNgAtvulkZpqkKK1l/p6lvoHeyLUzlGLe3QoqlOJUWpAxLFTTO0ctTj1EA7iQ5Qo970610WxXvdixIgSN7Vz1OJsWlOhFmd3ayrU4uxLOBVqcfbfmgq1OOOXHOcZYy4sjM/rAAAAAElFTkSuQmCC";
+  const TYPES = ['orbe', 'meduse', 'drone'];
+  const SLOT_X = i => 46 + i * 61, ROW_Y = 92, MAX = 8;
+  let aliens = [], list = [], copy = null, loopMode = 'copy', rm = 'yes', nextId = 0;
+  let ptr = null, busy = false, msg = '', msgCol = 'var(--muted)', ghostHit = null, booms = [];
+
+  function reset() {
+    aliens = []; list = []; copy = null; ptr = null; busy = false; ghostHit = null; booms = []; nextId = 0;
+    for (let i = 0; i < 6; i++) create(i);
+    say('Clique sur des aliens pour les toucher', 'var(--muted)');
+  }
+  function create(slot) {
+    const a = { id: nextId++, type: TYPES[slot % 3], slot, y: ROW_Y, on: true, hit: false };
+    aliens.push(a); list.push(a); return a;
+  }
+  function freeSlot() { for (let s = 0; s < MAX; s++) if (!aliens.some(a => a.on && a.slot === s)) return s; return -1; }
+  function say(t, c) { msg = t; msgCol = c; }
+
+  function draw() {
+    // écran
+    let s = '';
+    aliens.filter(a => a.on).forEach(a => {
+      const x = SLOT_X(a.slot), idx = list.indexOf(a);
+      s += `<g class="al" data-id="${a.id}">`;
+      s += `<image href="${IMG[a.type]}" x="${x - 18}" y="${a.y - 15}" width="36" height="30"/>`;
+      s += `<rect x="${x - 24}" y="${a.y - 20}" width="48" height="40" fill="transparent"/>`;
+      if (a.hit) s += `<path d="M${x - 14} ${a.y - 14} L${x + 14} ${a.y + 14} M${x + 14} ${a.y - 14} L${x - 14} ${a.y + 14}" stroke="var(--bad)" stroke-width="3" pointer-events="none"/>`;
+      s += `<text x="${x}" y="${a.y - 26}" text-anchor="middle" font-family="var(--f-mono)" font-size="12" font-weight="600" fill="var(--yellow)" pointer-events="none">[${idx >= 0 ? idx : '–'}]</text>`;
+      s += `</g>`;
+    });
+    booms.forEach(b => s += `<image href="${BOOM}" x="${b.x - 19}" y="${b.y - 16}" width="39" height="33" opacity="${b.o}"/>`);
+    $('screenRow').innerHTML = s;
+    $('status').textContent = msg; $('status').setAttribute('fill', msgCol);
+
+    // étagères
+    const W = 56, G = 4;
+    const shelf = (arr, y, title, ptrIdx) => {
+      let o = `<text x="14" y="${y - 12}" font-family="var(--f-mono)" font-size="13" font-weight="600" fill="var(--ink)">${title}</text>`;
+      arr.forEach((a, i) => {
+        const x = 14 + i * (W + G), ghost = !a.on;
+        o += `<rect x="${x}" y="${y}" width="${W}" height="48" fill="${ghost ? 'rgba(255,107,107,.12)' : 'var(--bg)'}" stroke="${ghost ? 'var(--bad)' : 'var(--ink)'}" stroke-width="2" ${ghost ? 'stroke-dasharray="5 4"' : ''}/>`;
+        if (ghost) o += `<text x="${x + W / 2}" y="${y + 28}" text-anchor="middle" font-family="var(--f-mono)" font-size="10" fill="var(--bad)">fantôme</text>`;
+        else o += `<image href="${IMG[a.type]}" x="${x + W / 2 - 15}" y="${y + 11}" width="30" height="25" opacity="${a.hit ? .55 : 1}"/>`;
+        if (a.hit && a.on) o += `<path d="M${x + 16} ${y + 12} L${x + 40} ${y + 36} M${x + 40} ${y + 12} L${x + 16} ${y + 36}" stroke="var(--bad)" stroke-width="2.5"/>`;
+        if (ghostHit === a) o += `<rect x="${x - 3}" y="${y - 3}" width="${W + 6}" height="54" fill="none" stroke="var(--bad)" stroke-width="3"/>`;
+        o += `<text x="${x + W / 2}" y="${y + 64}" text-anchor="middle" font-family="var(--f-mono)" font-size="12" fill="var(--muted)">${i}</text>`;
+      });
+      if (!arr.length) o += `<text x="14" y="${y + 28}" font-family="var(--f-mono)" font-size="13" fill="var(--muted)">[ ] vide</text>`;
+      if (ptrIdx !== null && ptrIdx !== undefined) {
+        const x = 14 + ptrIdx * (W + G) + W / 2;
+        o += `<path d="M${x - 8} ${y - 26} L${x + 8} ${y - 26} L${x} ${y - 6} Z" fill="var(--coral)"/>`;
+        o += `<text x="${x + 12}" y="${y - 12}" font-family="var(--f-mono)" font-size="12" font-weight="600" fill="var(--coral)">case ${ptrIdx}</text>`;
+      }
+      return o;
+    };
+    let l = '';
+    if (copy) {
+      l += shelf(copy, 248, 'copie = invaders[:]', ptr && ptr.on === 'copy' ? ptr.i : null);
+      l += shelf(list, 352, 'invaders', null);
+    } else {
+      l += shelf(list, 268, 'invaders', ptr && ptr.on === 'list' ? ptr.i : null);
+    }
+    $('listArea').innerHTML = l;
+
+    $('vlen').textContent = list.length;
+    $('vscr').textContent = aliens.filter(a => a.on).length;
+    $('vloop').textContent = ptr ? `case ${ptr.i}` : '–';
+    $('addBtn').disabled = busy || freeSlot() < 0;
+    $('delBtn').disabled = busy; $('moveBtn').disabled = busy;
+  }
+
+  // clic sur un alien : touché / pas touché
+  $('screenRow').addEventListener('click', e => {
+    const g = e.target.closest('.al'); if (!g || busy) return;
+    const a = aliens.find(x => x.id === +g.dataset.id); a.hit = !a.hit;
+    const n = aliens.filter(x => x.on && x.hit).length;
+    say(n ? `${n} alien${n > 1 ? 's' : ''} touché${n > 1 ? 's' : ''} : appuie sur « Supprimer les touchés »` : 'Clique sur des aliens pour les toucher', 'var(--muted)');
+    draw();
+  });
+
+  $('addBtn').addEventListener('click', () => {
+    const s = freeSlot(); if (s < 0) return;
+    const a = create(s);
+    say(`invaders.append(alien) → case ${list.indexOf(a)}`, 'var(--yellow)'); draw();
+  });
+
+  const wait = ms => new Promise(r => setTimeout(r, REDUCE ? Math.min(ms, 150) : ms));
+  function boom(a) { const b = { x: SLOT_X(a.slot), y: a.y, o: 1 }; booms.push(b); setTimeout(() => { booms = booms.filter(x => x !== b); draw(); }, 450); }
+
+  $('delBtn').addEventListener('click', async () => {
+    if (busy) return;
+    const wanted = aliens.filter(a => a.on && a.hit).length;
+    if (!wanted) { say('Touche d\'abord un ou plusieurs aliens', 'var(--muted)'); draw(); return; }
+    busy = true; ghostHit = null;
+    const src = loopMode === 'copy' ? (copy = list.slice()) : list;
+    let removed = 0;
+    // une boucle for de Python avance d'une case à chaque tour, quoi qu'il arrive
+    for (let i = 0; i < src.length; i++) {
+      ptr = { on: loopMode === 'copy' ? 'copy' : 'list', i };
+      const a = src[i];
+      say(`tour ${i} : la boucle regarde la case ${i}`, 'var(--coral)'); draw();
+      await wait(650);
+      if (a.on && a.hit) {
+        a.on = false; a.hit = false; boom(a); removed++;
+        if (rm === 'yes') list.splice(list.indexOf(a), 1);
+        say(rm === 'yes' ? `case ${i} : touché → remove_sprite + invaders.remove` : `case ${i} : touché → remove_sprite (remove oublié !)`, rm === 'yes' ? 'var(--yellow)' : 'var(--bad)');
+        draw(); await wait(750);
+      }
+    }
+    ptr = null;
+    const left = aliens.filter(a => a.on && a.hit).length;
+    if (left) say(`Fin de boucle : ${left} alien touché a été sauté !`, 'var(--bad)');
+    else if (rm === 'no') say(`Fin de boucle : ${removed} supprimé${removed > 1 ? 's' : ''} de l'écran, mais pas de la liste`, 'var(--bad)');
+    else say(`Fin de boucle : ${removed} alien${removed > 1 ? 's' : ''} supprimé${removed > 1 ? 's' : ''} partout ✓`, 'var(--green)');
+    busy = false; draw();
+    if (copy) { await wait(1400); copy = null; draw(); }
+  });
+
+  $('moveBtn').addEventListener('click', async () => {
+    if (busy) return;
+    busy = true; ghostHit = null;
+    for (let i = 0; i < list.length; i++) {
+      const a = list[i]; ptr = { on: 'list', i };
+      if (!a.on) { ghostHit = a; say(`case ${i} : ce sprite a été supprimé ! → erreur, le jeu plante`, 'var(--bad)'); busy = false; draw(); return; }
+      a.y = Math.min(a.y + 12, 150);
+      say(`case ${i} : set_y(get_y() - 10)`, 'var(--yellow)'); draw();
+      await wait(180);
+    }
+    ptr = null; say('Toute la liste a été parcourue ✓', 'var(--green)'); busy = false; draw();
+    await wait(900); aliens.forEach(a => a.y = ROW_Y); draw();
+  });
+
+  $('resetBtn').addEventListener('click', () => { if (!busy) { reset(); draw(); } });
+  document.querySelectorAll('[data-loop]').forEach(b => b.addEventListener('click', () => {
+    loopMode = b.dataset.loop; document.querySelectorAll('[data-loop]').forEach(x => x.setAttribute('aria-pressed', x === b));
+  }));
+  document.querySelectorAll('[data-rm]').forEach(b => b.addEventListener('click', () => {
+    rm = b.dataset.rm; document.querySelectorAll('[data-rm]').forEach(x => x.setAttribute('aria-pressed', x === b));
+  }));
+
+  const setLoop = m => document.querySelector(`[data-loop="${m}"]`).click();
+  const setRm = m => document.querySelector(`[data-rm="${m}"]`).click();
+  PAGE.onStep = i => {
+    if (busy) return;
+    if (i === 2) { setRm('no'); setLoop('copy'); }
+    if (i === 3) { setLoop('copy'); }
+    if (i === 4) { setRm('yes'); setLoop('list'); reset(); aliens[2].hit = true; aliens[3].hit = true; say('Deux aliens côte à côte sont touchés : lance la boucle', 'var(--muted)'); }
+    if (i === 5) { setRm('yes'); setLoop('copy'); reset(); aliens[2].hit = true; aliens[3].hit = true; say('Même situation, mais la boucle parcourt une copie', 'var(--muted)'); }
+    if (i <= 1) { setRm('yes'); setLoop('copy'); }
+    draw();
+  };
+
+  // défi
+  let lastK = -1;
+  PAGE.quiz = () => {
+    const qs = [
+      () => ({ text: '<span class="mono">invaders = [A, B, C, D]</span>. On fait <span class="mono">invaders.remove(B)</span>. Quel est maintenant l\'index de C ?', ans: '1', opts: ['1', '2', '3', '0'], why: 'Après le retrait, C recule d\'une case : de 2 à 1.' }),
+      () => ({ text: '<span class="mono">invaders</span> contient 5 aliens. On en crée un et on fait <span class="mono">append</span>. Quel est son index ?', ans: '5', opts: ['5', '6', '4', '0'], why: 'Les index commencent à 0 : 5 aliens occupent les cases 0 à 4, le nouveau va en 5.' }),
+      () => ({ text: '<span class="mono">for a in invaders:</span> retire B et C, qui se suivent dans la liste. Lequel reste ?', ans: 'C', opts: ['C', 'B', 'aucun', 'les deux'], why: 'Quand B est retiré, C recule à sa place… et la boucle passe à la case suivante : C est sauté.' }),
+      () => ({ text: 'On supprime un alien avec <span class="mono">stage.remove_sprite</span> mais on oublie <span class="mono">invaders.remove</span>. Que vaut <span class="mono">len(invaders)</span> ?', ans: 'pareil qu\'avant', opts: ['pareil qu\'avant', 'un de moins', '0', 'une erreur'], why: 'La liste n\'a pas changé : elle garde un fantôme.' }),
+      () => ({ text: 'Que fait <span class="mono">invaders[:]</span> ?', ans: 'une copie de la liste', opts: ['une copie de la liste', 'vide la liste', 'le dernier élément', 'une erreur'], why: 'C\'est une photo de la liste, qui ne bouge pas quand on modifie l\'originale.' }),
+    ];
+    let k; do { k = Math.floor(Math.random() * qs.length); } while (k === lastK); lastK = k;
+    return qs[k]();
+  };
+
+  reset(); draw();
+})();
+(() => {
+  // ----- étapes -----
+  const steps = [...document.querySelectorAll('#steps .step')];
+  let cur = 0;
+  $('picks').innerHTML = steps.map((s, i) => `<button class="pick" type="button" data-i="${i}" aria-label="Étape ${s.querySelector('.num').textContent}">${s.querySelector('.num').textContent}</button>`).join('');
+  function showStep(i, anim = true) {
+    cur = Math.max(0, Math.min(steps.length - 1, i));
+    steps.forEach((s, k) => { s.hidden = k !== cur; s.classList.remove('enter'); });
+    if (anim && !REDUCE) { void steps[cur].offsetWidth; steps[cur].classList.add('enter'); }
+    $('picks').querySelectorAll('.pick').forEach((b, k) => { if (k === cur) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current'); });
+    $('prevStep').disabled = cur === 0; $('nextStep').disabled = cur === steps.length - 1;
+    PAGE.onStep(cur, steps.length);
+  }
+  $('picks').addEventListener('click', e => { const b = e.target.closest('.pick'); if (b) showStep(+b.dataset.i); });
+  $('prevStep').addEventListener('click', () => showStep(cur - 1));
+  $('nextStep').addEventListener('click', () => showStep(cur + 1));
+  document.addEventListener('keydown', e => {
+    if (e.target.closest('input, select, textarea')) return;
+    if (e.key === 'ArrowRight') showStep(cur + 1); if (e.key === 'ArrowLeft') showStep(cur - 1);
+  });
+
+  // ----- défi -----
+  let q = null, answered = false, score = 0, total = 0;
+  function nextQ() {
+    q = PAGE.quiz(); answered = false;
+    $('qtext').innerHTML = q.text;
+    $('qvisual').innerHTML = q.visual || '';
+    const opts = [...new Set(q.opts)].sort(() => Math.random() - .5);
+    $('opts').innerHTML = opts.map(v => `<button class="opt" type="button">${v}</button>`).join('');
+    $('qfb').textContent = '';
+  }
+  $('opts').addEventListener('click', e => {
+    const b = e.target.closest('.opt'); if (!b || answered) return;
+    answered = true; total++;
+    const ok = b.textContent === q.ans; if (ok) score++;
+    $('opts').querySelectorAll('.opt').forEach(o => { o.disabled = true; if (o.textContent === q.ans) o.classList.add('ok'); else if (o === b) o.classList.add('ko'); });
+    $('qfb').textContent = (ok ? 'Bien vu ! ' : 'Pas tout à fait. ') + q.why;
+    $('qfb').style.color = ok ? 'var(--green)' : 'var(--bad)';
+    $('qscore').textContent = `Score : ${score} / ${total}`;
+  });
+  $('qnext').addEventListener('click', nextQ);
+
+  // ----- hauteur : pas de défilement à droite -----
+  const deskMQ = window.matchMedia('(min-width: 901px)');
+  function fitHeight() {
+    const col = document.querySelector('.stage-col');
+    col.style.minHeight = '';
+    if (!deskMQ.matches) return;
+    const box = $('steps'); let max = 0;
+    steps.forEach((s, k) => { steps.forEach((o, j) => o.hidden = j !== k); max = Math.max(max, box.scrollHeight); });
+    steps.forEach((o, j) => o.hidden = j !== cur);
+    col.style.minHeight = Math.ceil(max + 12 + $('stepnav').offsetHeight) + 'px';
+  }
+  showStep(0, false); nextQ(); fitHeight();
+  window.addEventListener('resize', fitHeight);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitHeight);
+})();
+</script>

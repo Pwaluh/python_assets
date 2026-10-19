@@ -1,0 +1,497 @@
+<title>Le repère de Codesters</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout : plan technique (série « bases », commune à tous les projets).
+   Gauche = l'écran de démonstration, dessiné comme un plan avec son cartouche ; droite = les étapes une à une. Thème volontairement unique (bleu d'architecte). */
+:root {
+  --bg: #0e3567;
+  --bg2: #0b2c57;
+  --panel: #133f76;
+  --line: #4d79b3;
+  --grid: rgba(255, 255, 255, .07);
+  --grid2: rgba(255, 255, 255, .13);
+  --ink: #f1f5ff;
+  --muted: #a9bfe0;
+  --yellow: #ffd23f;   /* cotes et annotations (accent) */
+  --coral: #ff8f6b;
+  --cyan: #7fe3ff;
+  --green: #8cf0a0;
+  --bad: #ff6b6b;
+  --f-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --f-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "Consolas", monospace;
+  color-scheme: dark;
+}
+html { background: var(--bg); }
+* { box-sizing: border-box; }
+body {
+  background-color: var(--bg); color: var(--ink);
+  font-family: var(--f-body); font-size: 17px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 26px 48px;
+  min-height: 100vh;
+  background-image:
+    linear-gradient(var(--grid2) 1px, transparent 1px), linear-gradient(90deg, var(--grid2) 1px, transparent 1px),
+    linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;
+  background-position: -1px -1px;
+  background-attachment: fixed;
+}
+.wrap { max-width: 1180px; margin: 0 auto; }
+@media (min-width: 1400px) { .wrap { max-width: 1400px; } }
+
+header { display: grid; gap: 8px; margin-bottom: 22px; max-width: 62ch; }
+.eyebrow { font-family: var(--f-mono); font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--f-display); font-weight: 700; font-size: clamp(38px, 6.5vw, 64px); line-height: .95; margin: 0; text-transform: uppercase; letter-spacing: .02em; text-wrap: balance; }
+h1 .o { color: var(--yellow); }
+.lede { margin: 0; font-size: 18px; color: var(--muted); }
+.lede b { color: var(--ink); }
+@media (min-width: 901px) {
+  body { padding-block: 20px; }
+  body header { max-width: none; display: flex; flex-wrap: wrap; align-items: flex-end; column-gap: 48px; row-gap: 6px; margin-bottom: 20px; }
+  body header .eyebrow { flex: 1 0 100%; }
+  body header h1 { flex: none; font-size: 54px; }
+  body header .lede { flex: 1 1 420px; max-width: 640px; min-width: 0; font-size: 17px; line-height: 1.5; padding-bottom: 4px; }
+}
+
+.layout { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 36px; align-items: start; }
+@media (max-width: 900px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+/* --- écran / plan --- */
+.stage-col { display: grid; gap: 12px; min-width: 0; }
+.screen { position: relative; border: 2px solid var(--ink); background: var(--bg2); max-width: 100%; outline: 1px solid var(--line); outline-offset: 5px; }
+.screen svg { display: block; width: 100%; height: auto; user-select: none; }
+.screen image { image-rendering: pixelated; }
+.cartouche { position: absolute; right: -2px; bottom: -2px; display: grid; grid-template-columns: auto auto; border: 2px solid var(--ink); background: var(--bg2); font-family: var(--f-mono); font-size: 10.5px; line-height: 1.3; text-transform: uppercase; letter-spacing: .06em; }
+.cartouche span { padding: 3px 8px; border-left: 1px solid var(--line); }
+.cartouche span:first-child { border-left: 0; color: var(--yellow); font-weight: 600; }
+.controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 18px; }
+@media (max-width: 520px) { .controls { grid-template-columns: minmax(0, 1fr); } }
+.ctl { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 2px 10px; font-size: 14px; }
+.ctl label { font-family: var(--f-mono); font-size: 13px; color: var(--muted); }
+.ctl output { font-family: var(--f-mono); font-weight: 600; font-size: 14px; font-variant-numeric: tabular-nums; }
+.ctl input { grid-column: 1 / -1; width: 100%; accent-color: var(--yellow); }
+.ctl input:focus-visible { outline: 2px solid var(--yellow); outline-offset: 3px; }
+.bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.seg { display: inline-flex; border: 2px solid var(--ink); }
+.seg button { font: inherit; font-size: 14px; font-weight: 700; padding: 6px 12px; border: 0; border-right: 2px solid var(--ink); background: transparent; color: var(--ink); cursor: pointer; }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.btn { font: inherit; font-size: 14px; font-weight: 700; background: transparent; color: var(--ink); border: 2px solid var(--ink); padding: 6px 14px; cursor: pointer; }
+.btn:hover { background: rgba(255, 255, 255, .08); }
+.btn.go { background: var(--yellow); color: #1b1600; border-color: var(--yellow); }
+.btn:focus-visible, .seg button:focus-visible, .opt:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+.btn:disabled { opacity: .35; cursor: default; }
+.readout { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.chip { border: 2px solid var(--ink); padding: 8px 12px; display: grid; align-content: center; min-width: 0; min-height: 70px; background: var(--bg2); }
+.chip .k { font-family: var(--f-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chip .v { font-family: var(--f-display); font-size: 28px; font-weight: 700; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.c-y .v { color: var(--yellow); } .c-c .v { color: var(--cyan); } .c-o .v { color: var(--coral); } .c-g .v { color: var(--green); } .c-b .v { color: var(--bad); }
+
+/* --- étapes --- */
+.steps-col { display: grid; gap: 20px; min-width: 0; }
+.steps { display: grid; min-width: 0; align-content: start; }
+.step { display: grid; gap: 12px; align-content: start; }
+.step[hidden] { display: none; }
+.step.enter { animation: enter .3s ease-out; }
+@keyframes enter { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: none; } }
+.step-head { display: flex; align-items: baseline; gap: 12px; border-bottom: 2px solid var(--ink); padding-bottom: 6px; }
+.num { font-family: var(--f-display); font-weight: 700; font-size: 40px; line-height: 1; color: var(--yellow); min-width: 1.2ch; }
+h2 { font-family: var(--f-display); font-weight: 700; font-size: 28px; line-height: 1.1; margin: 0; text-transform: uppercase; letter-spacing: .02em; text-wrap: balance; }
+.step p { margin: 0; max-width: 62ch; }
+.yw { color: var(--yellow); font-weight: 700; } .cw { color: var(--cyan); font-weight: 700; } .ow { color: var(--coral); font-weight: 700; } .gw { color: var(--green); font-weight: 700; } .bw { color: var(--bad); font-weight: 700; }
+.card { border: 2px solid var(--line); background: var(--bg2); padding: 14px 16px; min-width: 0; }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.formula { font-family: var(--f-mono); font-size: 15.5px; display: grid; gap: 4px; overflow-x: auto; font-variant-numeric: tabular-nums; }
+.cmt { color: var(--muted); font-weight: 400; }
+.say { font-style: italic; color: var(--muted); }
+.tbl-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 5px 10px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--f-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 400; }
+td.m { font-family: var(--f-mono); font-weight: 600; white-space: nowrap; }
+pre.code { margin: 0; background: #071f40; color: var(--ink); padding: 14px 16px; font-family: var(--f-mono); font-size: 13.5px; line-height: 1.65; overflow-x: auto; border: 2px solid var(--line); }
+.code .kwd { color: #c9b4ff; } .code .fn { color: var(--yellow); } .code .cm { color: #7f9cc6; } .code .nb { color: var(--coral); } .code .hl { background: rgba(255, 210, 63, .18); outline: 1px solid var(--yellow); }
+.code .er { color: var(--bad); font-weight: 600; } .code .st { color: var(--green); }
+
+.stepnav { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: space-between; border: 2px solid var(--ink); background: var(--bg2); min-height: 70px; padding: 8px 10px; }
+.stepnav .pick { font-family: var(--f-display); font-weight: 700; font-size: 20px; width: 40px; height: 40px; border: 2px solid var(--ink); background: transparent; color: var(--ink); cursor: pointer; display: grid; place-items: center; }
+.stepnav .pick:hover { background: rgba(255, 255, 255, .08); }
+.stepnav .pick[aria-current="step"] { background: var(--yellow); color: #1b1600; border-color: var(--yellow); }
+.stepnav .pick:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+.stepnav .arrow { width: 40px; height: 40px; padding: 0; font-size: 18px; display: grid; place-items: center; }
+
+.opts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.opt { font-family: var(--f-mono); font-size: 16px; font-weight: 600; padding: 10px; border: 2px solid var(--ink); background: transparent; color: var(--ink); cursor: pointer; text-align: left; font-variant-numeric: tabular-nums; }
+.opt:hover:not(:disabled) { background: rgba(255, 255, 255, .08); }
+.opt.ok { background: var(--green); color: #062010; border-color: var(--green); }
+.opt.ko { text-decoration: line-through; opacity: .5; }
+.feedback { min-height: 1.6em; margin: 10px 0 0; font-weight: 700; }
+.score { font-size: 14px; color: var(--muted); }
+
+@media (min-width: 901px) {
+  .layout { align-items: stretch; }
+  .stage-col { display: flex; flex-direction: column; }
+  .readout { margin-top: auto; }
+  .steps-col { contain: size; display: flex; flex-direction: column; gap: 12px; }
+  .steps { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 8px; }
+  .stepnav { flex: none; }
+}
+@media (prefers-reduced-motion: reduce) { .step.enter { animation: none; } }
+@media (min-width: 901px) { .layout { grid-template-columns: minmax(0, .86fr) minmax(0, 1fr); } }
+.screen svg { cursor: grab; }
+#vw { font-size: 21px; white-space: normal; line-height: 1.1; }
+.screen svg.dragging { cursor: grabbing; }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Les bases · Codesters · coordonnées</span>
+    <h1>Le repère <span class="o">de Codesters</span></h1>
+    <p class="lede">Avant de faire bouger quoi que ce soit, il faut savoir <b>où est quoi</b> : où est le point (0, 0), dans quel sens monte y, quel point du sprite donne sa position, et qui passe devant qui.</p>
+  </header>
+
+  <div class="layout">
+    <div class="stage-col">
+      <div class="screen">
+        <svg id="stage" viewBox="-282 -282 564 564" role="img" aria-label="La scène de Codesters, de −250 à 250 sur les deux axes. Fais glisser le soldat.">
+          <defs>
+            <marker id="arY" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="var(--yellow)"/></marker>
+            <marker id="arC" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="var(--cyan)"/></marker>
+          </defs>
+          <g id="gridL"></g>
+          <rect x="-250" y="-250" width="500" height="500" fill="none" stroke="var(--ink)" stroke-width="2"/>
+          <g id="axes">
+            <line id="axX" x1="-250" y1="0" x2="262" y2="0" stroke="var(--ink)" stroke-width="2" marker-end="url(#arY)"/>
+            <line id="axY" x1="0" y1="250" x2="0" y2="-262" stroke="var(--ink)" stroke-width="2" marker-end="url(#arY)"/>
+            <text x="268" y="16" font-family="var(--f-mono)" font-size="13" font-weight="600" fill="var(--yellow)" text-anchor="end">x</text>
+            <text x="10" y="-266" font-family="var(--f-mono)" font-size="13" font-weight="600" fill="var(--yellow)">y</text>
+          </g>
+          <g id="labels"></g>
+          <g id="background" visibility="hidden">
+            <rect x="-150" y="-150" width="300" height="300" fill="#1c4f8f" stroke="var(--cyan)" stroke-width="2"/>
+            <text x="0" y="-128" text-anchor="middle" font-family="var(--f-mono)" font-size="13" fill="var(--cyan)">le fond</text>
+          </g>
+          <g id="bigImg" visibility="hidden">
+            <rect id="bigReal" fill="none" stroke="var(--coral)" stroke-width="2" stroke-dasharray="8 6"/>
+            <rect id="bigShown" fill="rgba(255,143,107,.18)" stroke="var(--coral)" stroke-width="2"/>
+            <text id="bigTxt1" text-anchor="middle" font-family="var(--f-mono)" font-size="13" font-weight="600" fill="var(--coral)"></text>
+            <text id="bigTxt2" text-anchor="middle" font-family="var(--f-mono)" font-size="13" fill="var(--coral)"></text>
+          </g>
+          <g id="proj">
+            <line id="pX" stroke="var(--cyan)" stroke-width="1.5" stroke-dasharray="4 4"/>
+            <line id="pY" stroke="var(--cyan)" stroke-width="1.5" stroke-dasharray="4 4"/>
+            <text id="pXt" font-family="var(--f-mono)" font-size="12" font-weight="600" fill="var(--cyan)" text-anchor="middle"></text>
+            <text id="pYt" font-family="var(--f-mono)" font-size="12" font-weight="600" fill="var(--cyan)"></text>
+          </g>
+          <g id="sprite">
+            <image href="data:image/png;base64,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" x="-32" y="-32" width="64" height="64"/>
+            <g id="boxG" visibility="hidden">
+              <rect x="-32" y="-32" width="64" height="64" fill="none" stroke="var(--yellow)" stroke-width="1.5" stroke-dasharray="5 4"/>
+              <line x1="-32" y1="44" x2="32" y2="44" stroke="var(--yellow)" stroke-width="1.5"/>
+              <line x1="-32" y1="38" x2="-32" y2="50" stroke="var(--yellow)" stroke-width="1.5"/>
+              <line x1="32" y1="38" x2="32" y2="50" stroke="var(--yellow)" stroke-width="1.5"/>
+              <text x="0" y="62" text-anchor="middle" font-family="var(--f-mono)" font-size="12" font-weight="600" fill="var(--yellow)">64 px</text>
+            </g>
+            <circle r="4.5" fill="var(--yellow)" stroke="var(--bg2)" stroke-width="2"/>
+          </g>
+          <g id="bgOnTop" visibility="hidden">
+            <rect x="-150" y="-150" width="300" height="300" fill="#1c4f8f" stroke="var(--cyan)" stroke-width="2"/>
+            <text x="0" y="-128" text-anchor="middle" font-family="var(--f-mono)" font-size="13" fill="var(--cyan)">le fond</text>
+            <text x="0" y="6" text-anchor="middle" font-family="var(--f-body)" font-size="14" font-weight="700" fill="var(--bad)">le soldat est caché dessous</text>
+          </g>
+          <text id="status" x="-250" y="-262" font-family="var(--f-body)" font-weight="700" font-size="14"></text>
+        </svg>
+        <div class="cartouche"><span>Le repère</span><span>Codesters</span><span>éch. 1:1</span></div>
+      </div>
+      <div class="controls">
+        <div class="ctl"><label for="realSize">taille réelle d'une image (px)</label><output id="oReal">2048</output><input id="realSize" type="range" min="100" max="2048" step="4" value="2048"></div>
+        <div class="ctl"><label>&nbsp;</label><output></output><button class="btn" id="edgeBtn" type="button" style="grid-column:1/-1">Coller au bord droit</button></div>
+      </div>
+      <div class="bar">
+        <div class="seg" role="group" aria-label="Ordre de création du fond">
+          <button type="button" data-order="first" aria-pressed="true">Fond créé en premier</button>
+          <button type="button" data-order="last" aria-pressed="false">Fond créé en dernier</button>
+        </div>
+        <button class="btn" id="centerBtn" type="button">Retour en (0, 0)</button>
+      </div>
+      <div class="readout">
+        <div class="chip c-c"><span class="k">x · get_x()</span><span class="v" id="vx">0</span></div>
+        <div class="chip c-c"><span class="k">y · get_y()</span><span class="v" id="vy">0</span></div>
+        <div class="chip c-y"><span class="k">où ?</span><span class="v" id="vw">au centre</span></div>
+      </div>
+    </div>
+
+    <div class="steps-col">
+      <div class="steps" id="steps">
+        <section class="step">
+          <div class="step-head"><span class="num">1</span><h2>Le point (0, 0)</h2></div>
+          <p>La scène de Codesters mesure <b>500 × 500</b> pixels, et le point <span class="yw">(0, 0)</span> est <b>au centre</b>, pas dans un coin.</p>
+          <p>x va de <b>−250</b> (bord gauche) à <b>250</b> (bord droit), et y de <b>−250</b> (en bas) à <b>250</b> (en haut).</p>
+          <div class="card"><p>Fais glisser le soldat : ses coordonnées s'affichent en bas, comme ce que renverraient <span class="mono">get_x()</span> et <span class="mono">get_y()</span>.</p></div>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">2</span><h2>y monte vers le haut</h2></div>
+          <p>Comme en maths : <span class="cw">x</span> grandit vers la <b>droite</b>, <span class="cw">y</span> grandit vers le <b>haut</b>.</p>
+          <div class="card tbl-wrap">
+            <table>
+              <thead><tr><th>Pour aller…</th><th>on change</th><th>en Codesters</th></tr></thead>
+              <tbody>
+                <tr><td>vers la droite</td><td class="m">x + 20</td><td class="m">move_right(20)</td></tr>
+                <tr><td>vers la gauche</td><td class="m">x − 20</td><td class="m">move_left(20)</td></tr>
+                <tr><td>vers le haut</td><td class="m">y + 20</td><td class="m">move_up(20)</td></tr>
+                <tr><td>vers le bas</td><td class="m">y − 20</td><td class="m">move_down(20)</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="say">Attention : dans beaucoup d'autres outils (et dans les pages web), y descend vers le bas. Dans Codesters, il monte.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">3</span><h2>La position, c'est le centre</h2></div>
+          <p>Le point jaune, c'est <b>la position du sprite</b> : son <b>centre</b>, pas un de ses coins.</p>
+          <p>Conséquence : un soldat de 64 px placé en <span class="mono">x = 250</span> dépasse à moitié de l'écran. Pour qu'il touche le bord sans dépasser, on retire la moitié de sa largeur :</p>
+          <div class="card formula"><span>x = 250 − 64 ÷ 2 = <span class="yw">218</span></span></div>
+          <p>Essaie le bouton <b>Coller au bord droit</b>.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">4</span><h2>Qui passe devant ?</h2></div>
+          <p>Codesters empile les sprites <b>dans l'ordre où on les crée</b> : le dernier créé est posé par-dessus les autres, comme une feuille qu'on pose sur un tas.</p>
+          <div class="card"><p>Choisis <b>Fond créé en dernier</b> : le fond recouvre le soldat.</p></div>
+          <p>La règle : on crée <b>le fond en premier</b>, puis le décor, puis les personnages, et l'affichage (vies, score) à la fin.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">5</span><h2>Les grandes images</h2></div>
+          <p>Codesters <b>réduit</b> les grandes images pour qu'elles tiennent à l'écran. D'après nos essais, une image plus grande qu'environ <b>300 px</b> est ramenée à 300 px, et les petites gardent leur taille.</p>
+          <p>Pour retrouver la vraie taille, on agrandit avec <span class="mono">set_size</span> :</p>
+          <div class="card formula">
+            <span>set_size = vraie taille ÷ 300</span>
+            <span><span id="s5r">2048</span> ÷ 300 = <span class="ow" id="s5f">6,8</span></span>
+          </div>
+          <p>Bouge le curseur <b>taille réelle</b> : le cadre plein, c'est ce que Codesters affiche ; le pointillé, la vraie taille.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">6</span><h2>Dans Codesters</h2></div>
+          <pre class="code"><span class="cm"># 1. le fond d'abord (il sera derrière tout le reste)</span>
+background = codesters.Sprite(<span class="st">"fond_espace"</span>)
+background.<span class="fn">set_size</span>(<span class="nb">1.67</span>)       <span class="cm"># 500 ÷ 300</span>
+
+<span class="cm"># 2. ensuite les personnages</span>
+player = codesters.Sprite(<span class="st">"vaisseau"</span>, <span class="nb">0</span>, <span class="nb">-200</span>)   <span class="cm"># x = 0, y = -200 : en bas, au milieu</span>
+
+<span class="cm"># lire et changer la position</span>
+x = player.<span class="fn">get_x</span>()
+player.<span class="fn">set_x</span>(x + <span class="nb">20</span>)               <span class="cm"># 20 px vers la droite</span>
+player.<span class="fn">set_position</span>(<span class="nb">0</span>, <span class="nb">0</span>)          <span class="cm"># retour au centre</span>
+
+<span class="cm"># ne pas sortir de l'écran (sprite de 64 px)</span>
+<span class="kwd">if</span> player.<span class="fn">get_x</span>() &lt; <span class="nb">250</span> - <span class="nb">32</span>:
+    player.<span class="fn">move_right</span>(<span class="nb">20</span>)</pre>
+        </section>
+        <section class="step">
+          <div class="step-head"><span class="num">★</span><h2>Défi</h2></div>
+          <div class="card">
+            <div id="qvisual"></div>
+            <p style="margin:0 0 12px" id="qtext"></p>
+            <div class="opts" id="opts"></div>
+            <p class="feedback" id="qfb" aria-live="polite"></p>
+            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+              <button class="btn" id="qnext" type="button">Question suivante</button>
+              <span class="score" id="qscore">Score : 0 / 0</span>
+            </div>
+          </div>
+        </section>
+      </div>
+      <nav class="stepnav" id="stepnav" aria-label="Étapes">
+        <button class="btn arrow" id="prevStep" type="button" aria-label="Étape précédente" title="Précédent">←</button>
+        <span id="picks" style="display:flex;gap:6px;flex-wrap:wrap"></span>
+        <button class="btn arrow" id="nextStep" type="button" aria-label="Étape suivante" title="Suivant">→</button>
+      </nav>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const NS = 'http://www.w3.org/2000/svg';
+const REDUCE = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const fr = (n, d = 0) => { let s = (Math.round(n * 10 ** d) / 10 ** d).toFixed(d).replace('.', ',').replace(/^-/, '−'); if (/^−0(,0+)?$/.test(s)) s = s.slice(1); return s; };
+const PAGE = { onStep() {}, quiz: null, afterFit() {} };
+(() => {
+  // grille et graduations
+  let g = '';
+  for (let v = -250; v <= 250; v += 50) {
+    g += `<line x1="${v}" y1="-250" x2="${v}" y2="250" stroke="rgba(255,255,255,${v % 100 === 0 ? .14 : .07})"/>`;
+    g += `<line x1="-250" y1="${v}" x2="250" y2="${v}" stroke="rgba(255,255,255,${v % 100 === 0 ? .14 : .07})"/>`;
+  }
+  $('gridL').innerHTML = g;
+  let lb = '';
+  for (let v = -200; v <= 200; v += 100) {
+    if (v === 0) continue;
+    lb += `<text x="${v}" y="16" text-anchor="middle" font-family="var(--f-mono)" font-size="11" fill="var(--muted)">${fr(v)}</text>`;
+    lb += `<text x="-8" y="${-v + 4}" text-anchor="end" font-family="var(--f-mono)" font-size="11" fill="var(--muted)">${fr(v)}</text>`;
+  }
+  lb += `<text x="-8" y="16" text-anchor="end" font-family="var(--f-mono)" font-size="11" font-weight="600" fill="var(--yellow)">(0, 0)</text>`;
+  [[-250, 250, '(−250, 250)', 'start', 4, 14], [250, 250, '(250, 250)', 'end', -4, 14], [-250, -250, '(−250, −250)', 'start', 4, -6], [250, -250, '(250, −250)', 'end', -4, -6]].forEach(([x, y, t, a, dx, dy]) => {
+    lb += `<text x="${x + dx}" y="${-y + dy}" text-anchor="${a}" font-family="var(--f-mono)" font-size="11" fill="var(--muted)">${t}</text>`;
+  });
+  $('labels').innerHTML = lb;
+
+  let sx = 120, sy = 80, step = 0, order = 'first', realSize = 2048, anim = null;
+
+  function where(x, y) {
+    if (Math.abs(x) < 15 && Math.abs(y) < 15) return 'au centre';
+    const v = y > 15 ? 'en haut' : y < -15 ? 'en bas' : '';
+    const h = x > 15 ? 'à droite' : x < -15 ? 'à gauche' : '';
+    return [v, h].filter(Boolean).join(' ') || 'au centre';
+  }
+  function draw() {
+    $('sprite').setAttribute('transform', `translate(${sx} ${-sy})`);
+    $('pX').setAttribute('x1', sx); $('pX').setAttribute('y1', -sy); $('pX').setAttribute('x2', sx); $('pX').setAttribute('y2', 0);
+    $('pY').setAttribute('x1', sx); $('pY').setAttribute('y1', -sy); $('pY').setAttribute('x2', 0); $('pY').setAttribute('y2', -sy);
+    $('pXt').setAttribute('x', sx); $('pXt').setAttribute('y', sy >= 0 ? 30 : -22); $('pXt').textContent = fr(sx);
+    $('pYt').setAttribute('x', sx >= 0 ? -10 : 10); $('pYt').setAttribute('text-anchor', sx >= 0 ? 'end' : 'start'); $('pYt').setAttribute('y', -sy + 4); $('pYt').textContent = fr(sy);
+    $('vx').textContent = fr(sx); $('vy').textContent = fr(sy); $('vw').textContent = where(sx, sy);
+    $('boxG').setAttribute('visibility', step === 2 ? 'visible' : 'hidden');
+    $('axX').setAttribute('stroke-width', step === 1 ? 4 : 2); $('axY').setAttribute('stroke-width', step === 1 ? 4 : 2);
+    // le fond n'apparaît qu'à l'étape « Qui passe devant ? »
+    $('background').setAttribute('visibility', step === 3 && order === 'first' ? 'visible' : 'hidden');
+    $('bgOnTop').setAttribute('visibility', step === 3 && order === 'last' ? 'visible' : 'hidden');
+    // grande image
+    const shown = Math.min(realSize, 300), show = step === 4;
+    $('bigImg').setAttribute('visibility', show ? 'visible' : 'hidden');
+    const rs = Math.min(realSize, 500);   // la vraie taille, coupée au bord de la scène
+    $('bigReal').setAttribute('x', -rs / 2); $('bigReal').setAttribute('y', -rs / 2); $('bigReal').setAttribute('width', rs); $('bigReal').setAttribute('height', rs);
+    $('bigReal').setAttribute('visibility', show && realSize > 300 ? 'visible' : 'hidden');
+    $('bigShown').setAttribute('x', -shown / 2); $('bigShown').setAttribute('y', -shown / 2); $('bigShown').setAttribute('width', shown); $('bigShown').setAttribute('height', shown);
+    $('bigTxt1').setAttribute('x', 0); $('bigTxt1').setAttribute('y', -shown / 2 + 20); $('bigTxt1').textContent = `affichée : ${shown} px`;
+    $('bigTxt2').setAttribute('x', 0); $('bigTxt2').setAttribute('y', -shown / 2 + 38); $('bigTxt2').textContent = realSize > 300 ? `vraie : ${realSize} px → set_size(${fr(realSize / 300, 2)})` : 'pas réduite : set_size(1)';
+    $('s5r').textContent = realSize; $('s5f').textContent = realSize > 300 ? fr(realSize / 300, 2) : '1 (pas réduite)';
+    // message
+    let msg = '', col = 'var(--muted)';
+    const half = 32;
+    if (Math.abs(sx) + half > 250 || Math.abs(sy) + half > 250) { msg = 'Le soldat dépasse de l\'écran'; col = 'var(--bad)'; }
+    else if (step === 3 && order === 'last') { msg = 'Fond créé en dernier : il passe devant'; col = 'var(--bad)'; }
+    else if (step === 3) { msg = 'Fond créé en premier : il reste derrière'; col = 'var(--green)'; }
+    else if (step === 1) { msg = 'x → vers la droite · y ↑ vers le haut'; col = 'var(--yellow)'; }
+    else { msg = `soldat.set_position(${fr(sx)}, ${fr(sy)})`; col = 'var(--yellow)'; }
+    $('status').textContent = msg; $('status').setAttribute('fill', col);
+  }
+
+  // glisser le soldat
+  const svg = $('stage');
+  let dragging = false;
+  function toStage(e) { const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; const p = pt.matrixTransform(svg.getScreenCTM().inverse()); return { x: Math.round(p.x), y: Math.round(-p.y) }; }
+  function setPos(p) { sx = Math.max(-270, Math.min(270, p.x)); sy = Math.max(-270, Math.min(270, p.y)); draw(); }
+  svg.addEventListener('pointerdown', e => { dragging = true; svg.setPointerCapture(e.pointerId); svg.classList.add('dragging'); stopAnim(); setPos(toStage(e)); });
+  svg.addEventListener('pointermove', e => { if (dragging) setPos(toStage(e)); });
+  const end = () => { dragging = false; svg.classList.remove('dragging'); };
+  svg.addEventListener('pointerup', end); svg.addEventListener('pointercancel', end);
+
+  function stopAnim() { if (anim) { cancelAnimationFrame(anim); anim = null; } }
+  function glideTo(tx, ty) {
+    stopAnim();
+    if (REDUCE) { sx = tx; sy = ty; draw(); return; }
+    const fx = sx, fy = sy, t0 = performance.now();
+    const f = t => { const k = Math.min(1, (t - t0) / 450), e = 1 - (1 - k) ** 3; sx = Math.round(fx + (tx - fx) * e); sy = Math.round(fy + (ty - fy) * e); draw(); if (k < 1) anim = requestAnimationFrame(f); else anim = null; };
+    anim = requestAnimationFrame(f);
+  }
+  $('edgeBtn').addEventListener('click', () => glideTo(218, sy > 218 || sy < -218 ? 0 : sy));
+  $('centerBtn').addEventListener('click', () => glideTo(0, 0));
+  $('realSize').addEventListener('input', e => { realSize = +e.target.value; $('oReal').textContent = realSize; draw(); });
+  document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => {
+    order = b.dataset.order; document.querySelectorAll('.seg button').forEach(x => x.setAttribute('aria-pressed', x === b)); draw();
+  }));
+
+  PAGE.onStep = i => {
+    step = i;
+    if (i === 2) glideTo(250, 0);          // à moitié dehors : on voit le problème
+    if (i === 3) glideTo(60, 40);          // le soldat sur le fond, pour voir qui passe devant
+    draw();
+  };
+
+  // défi
+  let lastKind = -1;
+  PAGE.quiz = () => {
+    let kind; do { kind = Math.floor(Math.random() * 3); } while (kind === lastKind); lastKind = kind;
+    if (kind === 0) {
+      const cases = [[150, 150, 'en haut à droite'], [-150, 150, 'en haut à gauche'], [150, -150, 'en bas à droite'], [-150, -150, 'en bas à gauche'], [0, 200, 'en haut au milieu'], [-200, 0, 'à gauche au milieu']];
+      const [x, y, ans] = cases[Math.floor(Math.random() * cases.length)];
+      return { text: `Un sprite est en <span class="mono">(${fr(x)}, ${fr(y)})</span>. Où est-il sur l'écran ?`, ans, opts: [ans, ...cases.map(c => c[2]).filter(c => c !== ans).sort(() => Math.random() - .5).slice(0, 3)], why: `x ${x > 0 ? 'positif = à droite' : x < 0 ? 'négatif = à gauche' : '= 0 : au milieu'}, y ${y > 0 ? 'positif = en haut' : y < 0 ? 'négatif = en bas' : '= 0 : au milieu'}.` };
+    }
+    if (kind === 1) {
+      const w = [40, 64, 80, 100][Math.floor(Math.random() * 4)], ans = String(250 - w / 2);
+      return { text: `Un sprite de <b>${w} px</b> de large doit toucher le <b>bord droit</b> sans dépasser. Quel x ?`, ans, opts: [ans, '250', String(250 - w), String(250 + w / 2)], why: `Sa position est son centre : 250 − ${w} ÷ 2 = ${ans}.` };
+    }
+    const s = [600, 900, 1200, 1500][Math.floor(Math.random() * 4)], ans = fr(s / 300, 0);
+    return { text: `Une image fait <b>${s} px</b>. Codesters l'affiche à 300 px. Quel <span class="mono">set_size</span> pour sa vraie taille ?`, ans, opts: [ans, fr(300 / s, 2), fr(s / 100, 0), '1'], why: `${s} ÷ 300 = ${ans}.` };
+  };
+
+  draw();
+})();
+(() => {
+  // ----- étapes -----
+  const steps = [...document.querySelectorAll('#steps .step')];
+  let cur = 0;
+  $('picks').innerHTML = steps.map((s, i) => `<button class="pick" type="button" data-i="${i}" aria-label="Étape ${s.querySelector('.num').textContent}">${s.querySelector('.num').textContent}</button>`).join('');
+  function showStep(i, anim = true) {
+    cur = Math.max(0, Math.min(steps.length - 1, i));
+    steps.forEach((s, k) => { s.hidden = k !== cur; s.classList.remove('enter'); });
+    if (anim && !REDUCE) { void steps[cur].offsetWidth; steps[cur].classList.add('enter'); }
+    $('picks').querySelectorAll('.pick').forEach((b, k) => { if (k === cur) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current'); });
+    $('prevStep').disabled = cur === 0; $('nextStep').disabled = cur === steps.length - 1;
+    PAGE.onStep(cur, steps.length);
+  }
+  $('picks').addEventListener('click', e => { const b = e.target.closest('.pick'); if (b) showStep(+b.dataset.i); });
+  $('prevStep').addEventListener('click', () => showStep(cur - 1));
+  $('nextStep').addEventListener('click', () => showStep(cur + 1));
+  document.addEventListener('keydown', e => {
+    if (e.target.closest('input, select, textarea')) return;
+    if (e.key === 'ArrowRight') showStep(cur + 1); if (e.key === 'ArrowLeft') showStep(cur - 1);
+  });
+
+  // ----- défi -----
+  let q = null, answered = false, score = 0, total = 0;
+  function nextQ() {
+    q = PAGE.quiz(); answered = false;
+    $('qtext').innerHTML = q.text;
+    $('qvisual').innerHTML = q.visual || '';
+    const opts = [...new Set(q.opts)].sort(() => Math.random() - .5);
+    $('opts').innerHTML = opts.map(v => `<button class="opt" type="button">${v}</button>`).join('');
+    $('qfb').textContent = '';
+  }
+  $('opts').addEventListener('click', e => {
+    const b = e.target.closest('.opt'); if (!b || answered) return;
+    answered = true; total++;
+    const ok = b.textContent === q.ans; if (ok) score++;
+    $('opts').querySelectorAll('.opt').forEach(o => { o.disabled = true; if (o.textContent === q.ans) o.classList.add('ok'); else if (o === b) o.classList.add('ko'); });
+    $('qfb').textContent = (ok ? 'Bien vu ! ' : 'Pas tout à fait. ') + q.why;
+    $('qfb').style.color = ok ? 'var(--green)' : 'var(--bad)';
+    $('qscore').textContent = `Score : ${score} / ${total}`;
+  });
+  $('qnext').addEventListener('click', nextQ);
+
+  // ----- hauteur : pas de défilement à droite -----
+  const deskMQ = window.matchMedia('(min-width: 901px)');
+  function fitHeight() {
+    const col = document.querySelector('.stage-col');
+    col.style.minHeight = '';
+    if (!deskMQ.matches) return;
+    const box = $('steps'); let max = 0;
+    steps.forEach((s, k) => { steps.forEach((o, j) => o.hidden = j !== k); max = Math.max(max, box.scrollHeight); });
+    steps.forEach((o, j) => o.hidden = j !== cur);
+    col.style.minHeight = Math.ceil(max + 12 + $('stepnav').offsetHeight) + 'px';
+  }
+  showStep(0, false); nextQ(); fitHeight();
+  window.addEventListener('resize', fitHeight);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitHeight);
+})();
+</script>

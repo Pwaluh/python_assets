@@ -1,0 +1,485 @@
+<title>Le mot global</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout : plan technique (série « bases », commune à tous les projets).
+   Gauche = l'écran de démonstration, dessiné comme un plan avec son cartouche ; droite = les étapes une à une. Thème volontairement unique (bleu d'architecte). */
+:root {
+  --bg: #0e3567;
+  --bg2: #0b2c57;
+  --panel: #133f76;
+  --line: #4d79b3;
+  --grid: rgba(255, 255, 255, .07);
+  --grid2: rgba(255, 255, 255, .13);
+  --ink: #f1f5ff;
+  --muted: #a9bfe0;
+  --yellow: #ffd23f;   /* cotes et annotations (accent) */
+  --coral: #ff8f6b;
+  --cyan: #7fe3ff;
+  --green: #8cf0a0;
+  --bad: #ff6b6b;
+  --f-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --f-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "Consolas", monospace;
+  color-scheme: dark;
+}
+html { background: var(--bg); }
+* { box-sizing: border-box; }
+body {
+  background-color: var(--bg); color: var(--ink);
+  font-family: var(--f-body); font-size: 17px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 26px 48px;
+  min-height: 100vh;
+  background-image:
+    linear-gradient(var(--grid2) 1px, transparent 1px), linear-gradient(90deg, var(--grid2) 1px, transparent 1px),
+    linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;
+  background-position: -1px -1px;
+  background-attachment: fixed;
+}
+.wrap { max-width: 1180px; margin: 0 auto; }
+@media (min-width: 1400px) { .wrap { max-width: 1400px; } }
+
+header { display: grid; gap: 8px; margin-bottom: 22px; max-width: 62ch; }
+.eyebrow { font-family: var(--f-mono); font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--f-display); font-weight: 700; font-size: clamp(38px, 6.5vw, 64px); line-height: .95; margin: 0; text-transform: uppercase; letter-spacing: .02em; text-wrap: balance; }
+h1 .o { color: var(--yellow); }
+.lede { margin: 0; font-size: 18px; color: var(--muted); }
+.lede b { color: var(--ink); }
+@media (min-width: 901px) {
+  body { padding-block: 20px; }
+  body header { max-width: none; display: flex; flex-wrap: wrap; align-items: flex-end; column-gap: 48px; row-gap: 6px; margin-bottom: 20px; }
+  body header .eyebrow { flex: 1 0 100%; }
+  body header h1 { flex: none; font-size: 54px; }
+  body header .lede { flex: 1 1 420px; max-width: 640px; min-width: 0; font-size: 17px; line-height: 1.5; padding-bottom: 4px; }
+}
+
+.layout { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 36px; align-items: start; }
+@media (max-width: 900px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+/* --- écran / plan --- */
+.stage-col { display: grid; gap: 12px; min-width: 0; }
+.screen { position: relative; border: 2px solid var(--ink); background: var(--bg2); max-width: 100%; outline: 1px solid var(--line); outline-offset: 5px; }
+.screen svg { display: block; width: 100%; height: auto; user-select: none; }
+.screen image { image-rendering: pixelated; }
+.cartouche { position: absolute; right: -2px; bottom: -2px; display: grid; grid-template-columns: auto auto; border: 2px solid var(--ink); background: var(--bg2); font-family: var(--f-mono); font-size: 10.5px; line-height: 1.3; text-transform: uppercase; letter-spacing: .06em; }
+.cartouche span { padding: 3px 8px; border-left: 1px solid var(--line); }
+.cartouche span:first-child { border-left: 0; color: var(--yellow); font-weight: 600; }
+.controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 18px; }
+@media (max-width: 520px) { .controls { grid-template-columns: minmax(0, 1fr); } }
+.ctl { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 2px 10px; font-size: 14px; }
+.ctl label { font-family: var(--f-mono); font-size: 13px; color: var(--muted); }
+.ctl output { font-family: var(--f-mono); font-weight: 600; font-size: 14px; font-variant-numeric: tabular-nums; }
+.ctl input { grid-column: 1 / -1; width: 100%; accent-color: var(--yellow); }
+.ctl input:focus-visible { outline: 2px solid var(--yellow); outline-offset: 3px; }
+.bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.seg { display: inline-flex; border: 2px solid var(--ink); }
+.seg button { font: inherit; font-size: 14px; font-weight: 700; padding: 6px 12px; border: 0; border-right: 2px solid var(--ink); background: transparent; color: var(--ink); cursor: pointer; }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.btn { font: inherit; font-size: 14px; font-weight: 700; background: transparent; color: var(--ink); border: 2px solid var(--ink); padding: 6px 14px; cursor: pointer; }
+.btn:hover { background: rgba(255, 255, 255, .08); }
+.btn.go { background: var(--yellow); color: #1b1600; border-color: var(--yellow); }
+.btn:focus-visible, .seg button:focus-visible, .opt:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+.btn:disabled { opacity: .35; cursor: default; }
+.readout { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.chip { border: 2px solid var(--ink); padding: 8px 12px; display: grid; align-content: center; min-width: 0; min-height: 70px; background: var(--bg2); }
+.chip .k { font-family: var(--f-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chip .v { font-family: var(--f-display); font-size: 28px; font-weight: 700; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.c-y .v { color: var(--yellow); } .c-c .v { color: var(--cyan); } .c-o .v { color: var(--coral); } .c-g .v { color: var(--green); } .c-b .v { color: var(--bad); }
+
+/* --- étapes --- */
+.steps-col { display: grid; gap: 20px; min-width: 0; }
+.steps { display: grid; min-width: 0; align-content: start; }
+.step { display: grid; gap: 12px; align-content: start; }
+.step[hidden] { display: none; }
+.step.enter { animation: enter .3s ease-out; }
+@keyframes enter { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: none; } }
+.step-head { display: flex; align-items: baseline; gap: 12px; border-bottom: 2px solid var(--ink); padding-bottom: 6px; }
+.num { font-family: var(--f-display); font-weight: 700; font-size: 40px; line-height: 1; color: var(--yellow); min-width: 1.2ch; }
+h2 { font-family: var(--f-display); font-weight: 700; font-size: 28px; line-height: 1.1; margin: 0; text-transform: uppercase; letter-spacing: .02em; text-wrap: balance; }
+.step p { margin: 0; max-width: 62ch; }
+.yw { color: var(--yellow); font-weight: 700; } .cw { color: var(--cyan); font-weight: 700; } .ow { color: var(--coral); font-weight: 700; } .gw { color: var(--green); font-weight: 700; } .bw { color: var(--bad); font-weight: 700; }
+.card { border: 2px solid var(--line); background: var(--bg2); padding: 14px 16px; min-width: 0; }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.formula { font-family: var(--f-mono); font-size: 15.5px; display: grid; gap: 4px; overflow-x: auto; font-variant-numeric: tabular-nums; }
+.cmt { color: var(--muted); font-weight: 400; }
+.say { font-style: italic; color: var(--muted); }
+.tbl-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 5px 10px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--f-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 400; }
+td.m { font-family: var(--f-mono); font-weight: 600; white-space: nowrap; }
+pre.code { margin: 0; background: #071f40; color: var(--ink); padding: 14px 16px; font-family: var(--f-mono); font-size: 13.5px; line-height: 1.65; overflow-x: auto; border: 2px solid var(--line); }
+.code .kwd { color: #c9b4ff; } .code .fn { color: var(--yellow); } .code .cm { color: #7f9cc6; } .code .nb { color: var(--coral); } .code .hl { background: rgba(255, 210, 63, .18); outline: 1px solid var(--yellow); }
+.code .er { color: var(--bad); font-weight: 600; } .code .st { color: var(--green); }
+
+.stepnav { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: space-between; border: 2px solid var(--ink); background: var(--bg2); min-height: 70px; padding: 8px 10px; }
+.stepnav .pick { font-family: var(--f-display); font-weight: 700; font-size: 20px; width: 40px; height: 40px; border: 2px solid var(--ink); background: transparent; color: var(--ink); cursor: pointer; display: grid; place-items: center; }
+.stepnav .pick:hover { background: rgba(255, 255, 255, .08); }
+.stepnav .pick[aria-current="step"] { background: var(--yellow); color: #1b1600; border-color: var(--yellow); }
+.stepnav .pick:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+.stepnav .arrow { width: 40px; height: 40px; padding: 0; font-size: 18px; display: grid; place-items: center; }
+
+.opts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.opt { font-family: var(--f-mono); font-size: 16px; font-weight: 600; padding: 10px; border: 2px solid var(--ink); background: transparent; color: var(--ink); cursor: pointer; text-align: left; font-variant-numeric: tabular-nums; }
+.opt:hover:not(:disabled) { background: rgba(255, 255, 255, .08); }
+.opt.ok { background: var(--green); color: #062010; border-color: var(--green); }
+.opt.ko { text-decoration: line-through; opacity: .5; }
+.feedback { min-height: 1.6em; margin: 10px 0 0; font-weight: 700; }
+.score { font-size: 14px; color: var(--muted); }
+
+@media (min-width: 901px) {
+  .layout { align-items: stretch; }
+  .stage-col { display: flex; flex-direction: column; }
+  .readout { margin-top: auto; }
+  .steps-col { contain: size; display: flex; flex-direction: column; gap: 12px; }
+  .steps { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 8px; }
+  .stepnav { flex: none; }
+}
+@media (prefers-reduced-motion: reduce) { .step.enter { animation: none; } }
+@media (min-width: 901px) { .layout { grid-template-columns: minmax(0, .95fr) minmax(0, 1fr); } }
+.seg button { font-size: 12.5px; padding: 6px 9px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Les bases · Python · variables et fonctions</span>
+    <h1>Le mot <span class="o">global</span></h1>
+    <p class="lede">Pourquoi <b>lives -= 1</b> plante dans une fonction, alors que <b>invaders.append(alien)</b> marche très bien ? Tout est une histoire de deux cahiers : celui du jeu, et le brouillon de la fonction.</p>
+  </header>
+
+  <div class="layout">
+    <div class="stage-col">
+      <div class="screen">
+        <svg id="stage" viewBox="0 0 520 440" role="img" aria-label="Le code de la fonction, le cahier du jeu et le brouillon de la fonction pendant l'appel">
+          <defs>
+            <marker id="arL" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="var(--yellow)"/></marker>
+          </defs>
+          <!-- le code -->
+          <rect x="14" y="16" width="292" height="176" fill="#071f40" stroke="var(--line)" stroke-width="2"/>
+          <text x="24" y="36" font-family="var(--f-mono)" font-size="10.5" letter-spacing="1.5" fill="var(--muted)">LE CODE</text>
+          <g id="codeLines" font-family="var(--f-mono)" font-size="13.5"></g>
+          <!-- le cahier du jeu -->
+          <rect x="322" y="16" width="184" height="176" fill="var(--bg)" stroke="var(--ink)" stroke-width="2"/>
+          <text x="332" y="36" font-family="var(--f-mono)" font-size="10.5" letter-spacing="1.5" fill="var(--yellow)">LE CAHIER DU JEU</text>
+          <text x="332" y="50" font-family="var(--f-mono)" font-size="10" fill="var(--muted)">variables globales</text>
+          <g id="globals"></g>
+          <!-- le brouillon de la fonction -->
+          <g id="frame"></g>
+          <path id="link" fill="none" stroke="var(--yellow)" stroke-width="2.5" marker-end="url(#arL)" visibility="hidden"/>
+          <text id="status" x="14" y="404" font-family="var(--f-body)" font-weight="700" font-size="14"></text>
+        </svg>
+        <div class="cartouche"><span>global</span><span>Codesters</span><span>éch. 1:1</span></div>
+      </div>
+      <div class="bar">
+        <div class="seg" role="group" aria-label="Exemple">
+          <button type="button" data-ex="read" aria-pressed="true">Lire</button>
+          <button type="button" data-ex="bad" aria-pressed="false">−1 sans global</button>
+          <button type="button" data-ex="good" aria-pressed="false">−1 avec global</button>
+          <button type="button" data-ex="append" aria-pressed="false">append</button>
+          <button type="button" data-ex="reset" aria-pressed="false">= []</button>
+        </div>
+      </div>
+      <div class="bar">
+        <button class="btn go" id="runBtn" type="button">▶ Appeler la fonction</button>
+        <button class="btn" id="resetBtn" type="button">↺ Remettre le jeu à zéro</button>
+      </div>
+      <div class="readout">
+        <div class="chip c-y"><span class="k">lives (le jeu)</span><span class="v" id="vlives">10</span></div>
+        <div class="chip c-c"><span class="k">len(invaders) (le jeu)</span><span class="v" id="vinv">3</span></div>
+        <div class="chip c-g"><span class="k">résultat</span><span class="v" id="vres">–</span></div>
+      </div>
+    </div>
+
+    <div class="steps-col">
+      <div class="steps" id="steps">
+        <section class="step">
+          <div class="step-head"><span class="num">1</span><h2>Deux cahiers</h2></div>
+          <p>Les variables créées en dehors des fonctions (<span class="mono">lives</span>, <span class="mono">score</span>, <span class="mono">invaders</span>…) sont dans le <span class="yw">cahier du jeu</span>. Tout le programme peut les lire.</p>
+          <p>Quand une fonction est appelée, elle reçoit un <b>brouillon</b> tout neuf. Les variables qu'elle crée vont dedans… et le brouillon est <b>jeté</b> à la fin de la fonction.</p>
+          <p class="say">Appuie sur « Appeler la fonction » : le brouillon apparaît en bas, puis disparaît.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">2</span><h2>Lire, ça marche</h2></div>
+          <p>Une fonction peut <b>lire</b> une variable du jeu sans rien faire de spécial. Python ne la trouve pas dans le brouillon, alors il va la chercher dans le cahier du jeu.</p>
+          <pre class="code"><span class="kwd">def</span> <span class="fn">is_dead</span>():
+    <span class="kwd">return</span> lives &lt;= <span class="nb">0</span>     <span class="cm"># on lit seulement</span></pre>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">3</span><h2>Modifier : ça plante</h2></div>
+          <p>Mais dès qu'une fonction <b>écrit</b> <span class="mono">lives = …</span> (ou <span class="mono">lives -= 1</span>), Python décide : « <i>lives</i> est une variable de mon brouillon ».</p>
+          <p>Et dans le brouillon, <span class="mono">lives</span> n'a encore aucune valeur. Calculer <span class="mono">lives − 1</span> est impossible :</p>
+          <div class="card formula"><span class="bw">UnboundLocalError: lives</span><span class="cmt"># « je ne connais pas encore lives dans ce brouillon »</span></div>
+          <p class="say">Le message exact peut varier dans Codesters, mais l'idée est la même.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">4</span><h2>global : écrire dans le cahier du jeu</h2></div>
+          <p>En haut de la fonction, <span class="mono">global lives</span> veut dire : « quand je parle de <i>lives</i>, c'est celle du <span class="yw">cahier du jeu</span>, pas une nouvelle dans mon brouillon ».</p>
+          <pre class="code"><span class="kwd">def</span> <span class="fn">player_hit</span>(sprite, hit_sprite):
+    <span class="kwd">global</span> lives
+    lives -= <span class="nb">1</span></pre>
+          <p>Regarde la flèche : la fonction modifie directement la case du jeu.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">5</span><h2>Les listes : pas besoin</h2></div>
+          <p><span class="mono">invaders.append(alien)</span> n'écrit pas <span class="mono">invaders = …</span> : on ne change pas l'étiquette, on <b>range quelque chose dans la liste</b> qu'elle désigne.</p>
+          <p>Python lit donc <span class="mono">invaders</span> dans le cahier du jeu, comme à l'étape 2, et la liste grandit. Pas besoin de <span class="mono">global</span>.</p>
+          <p class="say">Pareil pour <span class="mono">invaders.remove(…)</span>, <span class="mono">player.set_x(…)</span>, <span class="mono">boss.hide()</span>…</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">6</span><h2>Le piège : = []</h2></div>
+          <p>Pour vider la liste au début d'une nouvelle partie, on pourrait écrire <span class="mono">invaders = []</span> dans une fonction.</p>
+          <p>Mais c'est un <span class="mono">=</span> : Python crée une <b>nouvelle</b> liste vide dans le brouillon… qui est jeté à la fin. La vraie liste du jeu n'a <span class="bw">pas bougé</span>, et il n'y a <b>aucune erreur</b> pour prévenir.</p>
+          <p>Avec <span class="mono">global invaders</span> en haut de la fonction, le problème disparaît.</p>
+        </section>
+
+        <section class="step">
+          <div class="step-head"><span class="num">7</span><h2>La règle</h2></div>
+          <div class="card tbl-wrap">
+            <table>
+              <thead><tr><th>Dans une fonction, j'écris…</th><th>global ?</th></tr></thead>
+              <tbody>
+                <tr><td class="m">print(lives)</td><td>non, on lit</td></tr>
+                <tr><td class="m">lives -= 1</td><td class="yw">oui</td></tr>
+                <tr><td class="m">score = score + 10</td><td class="yw">oui</td></tr>
+                <tr><td class="m">invaders.append(alien)</td><td>non, on range</td></tr>
+                <tr><td class="m">invaders = []</td><td class="yw">oui</td></tr>
+                <tr><td class="m">lives_display = codesters.Text(…)</td><td class="yw">oui</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>En résumé : <b>un nom du jeu à gauche d'un <span class="mono">=</span></b> (ou de <span class="mono">+=</span>, <span class="mono">-=</span>) dans une fonction → <span class="mono">global</span> ce nom.</p>
+        </section>
+        <section class="step">
+          <div class="step-head"><span class="num">★</span><h2>Défi</h2></div>
+          <div class="card">
+            <div id="qvisual"></div>
+            <p style="margin:0 0 12px" id="qtext"></p>
+            <div class="opts" id="opts"></div>
+            <p class="feedback" id="qfb" aria-live="polite"></p>
+            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+              <button class="btn" id="qnext" type="button">Question suivante</button>
+              <span class="score" id="qscore">Score : 0 / 0</span>
+            </div>
+          </div>
+        </section>
+      </div>
+      <nav class="stepnav" id="stepnav" aria-label="Étapes">
+        <button class="btn arrow" id="prevStep" type="button" aria-label="Étape précédente" title="Précédent">←</button>
+        <span id="picks" style="display:flex;gap:6px;flex-wrap:wrap"></span>
+        <button class="btn arrow" id="nextStep" type="button" aria-label="Étape suivante" title="Suivant">→</button>
+      </nav>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const NS = 'http://www.w3.org/2000/svg';
+const REDUCE = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const fr = (n, d = 0) => { let s = (Math.round(n * 10 ** d) / 10 ** d).toFixed(d).replace('.', ',').replace(/^-/, '−'); if (/^−0(,0+)?$/.test(s)) s = s.slice(1); return s; };
+const PAGE = { onStep() {}, quiz: null, afterFit() {} };
+(() => {
+  const EX = {
+    read: { fn: 'is_dead', lines: ['def is_dead():', '    return lives <= 0'] },
+    bad: { fn: 'player_hit', lines: ['def player_hit():', '    lives -= 1'] },
+    good: { fn: 'player_hit', lines: ['def player_hit():', '    global lives', '    lives -= 1'] },
+    append: { fn: 'spawn', lines: ['def spawn():', '    alien = codesters.Sprite(...)', '    invaders.append(alien)'] },
+    reset: { fn: 'new_game', lines: ['def new_game():', '    invaders = []'] },
+  };
+  let ex = 'read', G, frame, hl, link, busy = false, msg = '', msgCol = 'var(--muted)', result = '–', resCol = 'var(--muted)';
+  function resetGame() { G = { lives: 10, invaders: 3 }; frame = null; hl = -1; link = null; result = '–'; resCol = 'var(--muted)'; say('Appuie sur « Appeler la fonction »', 'var(--muted)'); }
+  const say = (t, c) => { msg = t; msgCol = c; };
+  const esc = t => t.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const KW = t => esc(t).replace(/\b(def|return|global)\b/g, '<tspan fill="#c9b4ff">$1</tspan>').replace(/\b(\d+)\b/g, '<tspan fill="var(--coral)">$1</tspan>');
+
+  function box(x, y, w, label, value, opt = {}) {
+    let o = `<rect x="${x}" y="${y}" width="${w}" height="34" fill="${opt.fill || 'var(--bg2)'}" stroke="${opt.stroke || 'var(--ink)'}" stroke-width="2" ${opt.dash ? 'stroke-dasharray="5 4"' : ''}/>`;
+    o += `<text x="${x + 8}" y="${y + 22}" font-family="var(--f-mono)" font-size="13" fill="var(--muted)">${label} =</text>`;
+    o += `<text x="${x + w - 8}" y="${y + 22}" text-anchor="end" font-family="var(--f-mono)" font-size="15" font-weight="600" fill="${opt.vcol || 'var(--ink)'}">${value}</text>`;
+    return o;
+  }
+  function listBoxes(x, y, n, col) {
+    let o = '';
+    for (let i = 0; i < Math.max(n, 0); i++) o += `<rect x="${x + i * 17}" y="${y}" width="14" height="14" fill="${col}"/>`;
+    if (!n) o += `<text x="${x}" y="${y + 12}" font-family="var(--f-mono)" font-size="12" fill="var(--muted)">[ ] vide</text>`;
+    return o;
+  }
+
+  function draw() {
+    // code
+    const L = EX[ex].lines;
+    $('codeLines').innerHTML = L.map((t, i) => (i === hl ? `<rect x="18" y="${48 + i * 24}" width="284" height="22" fill="rgba(255,210,63,.18)" stroke="var(--yellow)"/>` : '')
+      + `<text x="26" y="${64 + i * 24}" fill="var(--ink)" xml:space="preserve">${KW(t)}</text>`).join('')
+      + `<text x="26" y="${64 + (L.length + 1) * 24}" fill="var(--muted)" xml:space="preserve">${esc(EX[ex].fn)}()   # on l'appelle</text>`;
+    // le jeu
+    let g = box(332, 62, 164, 'lives', G.lives, { vcol: 'var(--yellow)' });
+    g += `<rect x="332" y="106" width="164" height="70" fill="var(--bg2)" stroke="var(--ink)" stroke-width="2"/>`;
+    g += `<text x="340" y="126" font-family="var(--f-mono)" font-size="13" fill="var(--muted)">invaders =</text>`;
+    g += listBoxes(342, 142, G.invaders, 'var(--cyan)');
+    $('globals').innerHTML = g;
+    // brouillon
+    let f = '';
+    if (frame) {
+      f += `<rect x="14" y="214" width="492" height="168" fill="rgba(7,31,64,.85)" stroke="var(--coral)" stroke-width="2" stroke-dasharray="8 5"/>`;
+      f += `<text x="24" y="234" font-family="var(--f-mono)" font-size="10.5" letter-spacing="1.5" fill="var(--coral)">LE BROUILLON DE ${EX[ex].fn.toUpperCase()}()  — jeté à la fin</text>`;
+      let y = 250;
+      Object.entries(frame.locals).forEach(([k, v]) => {
+        if (k === 'invaders') {
+          f += `<rect x="24" y="${y}" width="200" height="56" fill="var(--bg2)" stroke="var(--bad)" stroke-width="2"/>`;
+          f += `<text x="32" y="${y + 20}" font-family="var(--f-mono)" font-size="13" fill="var(--muted)">invaders =</text>`;
+          f += listBoxes(34, y + 32, v, 'var(--bad)');
+          y += 66;
+        } else {
+          const bad = v === '?';
+          f += box(24, y, 200, k, bad ? '???' : v, { stroke: bad ? 'var(--bad)' : 'var(--ink)', vcol: bad ? 'var(--bad)' : 'var(--ink)', dash: bad });
+          y += 44;
+        }
+      });
+      if (!Object.keys(frame.locals).length) f += `<text x="24" y="${y + 18}" font-family="var(--f-mono)" font-size="13" fill="var(--muted)">(rien dedans : la fonction utilise le cahier du jeu)</text>`;
+      if (frame.error) {
+        f += `<rect x="240" y="250" width="256" height="62" fill="rgba(255,107,107,.15)" stroke="var(--bad)" stroke-width="2"/>`;
+        f += `<text x="250" y="274" font-family="var(--f-mono)" font-size="13" font-weight="600" fill="var(--bad)">UnboundLocalError</text>`;
+        f += `<text x="250" y="296" font-family="var(--f-mono)" font-size="12" fill="var(--bad)">lives n'a pas de valeur ici</text>`;
+      }
+      if (frame.note) f += `<text x="24" y="${y + 46}" font-family="var(--f-body)" font-size="13" font-weight="700" fill="var(--yellow)">${frame.note}</text>`;
+    }
+    $('frame').innerHTML = f;
+    const lk = $('link');
+    if (link) { lk.setAttribute('d', link); lk.setAttribute('visibility', 'visible'); } else lk.setAttribute('visibility', 'hidden');
+    $('status').textContent = msg; $('status').setAttribute('fill', msgCol);
+    $('vlives').textContent = G.lives; $('vinv').textContent = G.invaders;
+    $('vres').textContent = result; $('vres').style.color = resCol;
+    $('runBtn').disabled = busy;
+  }
+
+  const wait = ms => new Promise(r => setTimeout(r, REDUCE ? 120 : ms));
+  async function run() {
+    if (busy) return; busy = true;
+    frame = { locals: {} }; hl = 0; link = null; result = '…'; resCol = 'var(--muted)';
+    say(`appel de ${EX[ex].fn}() : un brouillon tout neuf`, 'var(--coral)'); draw(); await wait(900);
+    if (ex === 'read') {
+      hl = 1; link = 'M290 214 C 290 140, 300 79, 330 79'; say('lives n\'est pas dans le brouillon → Python lit le cahier du jeu', 'var(--yellow)'); draw(); await wait(1300);
+      result = G.lives <= 0 ? 'True' : 'False'; resCol = 'var(--green)'; say(`return ${G.lives} <= 0 → ${result}`, 'var(--green)');
+    } else if (ex === 'bad') {
+      hl = 1; frame.locals = { lives: '?' }; say('lives -= 1 : un « = » → lives est une variable du brouillon…', 'var(--coral)'); draw(); await wait(1300);
+      frame.error = true; result = 'erreur'; resCol = 'var(--bad)'; say('…mais elle n\'a pas encore de valeur : impossible de faire − 1', 'var(--bad)'); draw(); await wait(1800);
+      busy = false; draw(); return;   // le brouillon reste affiché : le programme s'est arrêté là
+    } else if (ex === 'good') {
+      hl = 1; frame.note = 'global lives : pas de lives dans le brouillon'; link = 'M290 214 C 290 140, 300 79, 330 79'; say('global lives : « lives, c\'est celle du jeu »', 'var(--yellow)'); draw(); await wait(1300);
+      hl = 2; G.lives -= 1; say(`lives -= 1 → la case du jeu passe à ${G.lives}`, 'var(--green)'); draw(); await wait(1100);
+      result = 'OK'; resCol = 'var(--green)';
+    } else if (ex === 'append') {
+      hl = 1; frame.locals = { alien: 'Sprite' }; say('alien = … : une variable du brouillon, c\'est normal', 'var(--coral)'); draw(); await wait(1200);
+      hl = 2; link = 'M224 262 C 290 262, 300 150, 330 150'; G.invaders = Math.min(G.invaders + 1, 9); say('invaders.append : on lit invaders dans le jeu et on range dedans', 'var(--green)'); draw(); await wait(1300);
+      result = 'OK'; resCol = 'var(--green)';
+    } else if (ex === 'reset') {
+      hl = 1; frame.locals = { invaders: 0 }; say('invaders = [] : un « = » → une NOUVELLE liste dans le brouillon', 'var(--coral)'); draw(); await wait(1600);
+      result = 'rien changé'; resCol = 'var(--bad)'; say('La vraie liste du jeu n\'a pas bougé, et aucune erreur ne prévient', 'var(--bad)');
+    }
+    draw(); await wait(1500);
+    frame = null; hl = -1; link = null;
+    if (ex === 'reset') say(`Fin de new_game() : le brouillon est jeté… le jeu a toujours ${G.invaders} aliens`, 'var(--bad)');
+    else say(`Fin de ${EX[ex].fn}() : le brouillon est jeté`, 'var(--muted)');
+    busy = false; draw();
+  }
+
+  function setEx(e) {
+    if (busy) return;
+    ex = e; document.querySelectorAll('[data-ex]').forEach(x => x.setAttribute('aria-pressed', x.dataset.ex === e));
+    frame = null; hl = -1; link = null; result = '–'; resCol = 'var(--muted)'; say('Appuie sur « Appeler la fonction »', 'var(--muted)'); draw();
+  }
+  document.querySelectorAll('[data-ex]').forEach(b => b.addEventListener('click', () => setEx(b.dataset.ex)));
+  $('runBtn').addEventListener('click', run);
+  $('resetBtn').addEventListener('click', () => { if (!busy) { resetGame(); draw(); } });
+
+  PAGE.onStep = i => { const m = ['read', 'read', 'bad', 'good', 'append', 'reset', 'good']; if (m[i] && m[i] !== ex) setEx(m[i]); };
+
+  // défi
+  const QS = [
+    ['score += 10', 'oui', 'C\'est un « += » sur une variable du jeu.'],
+    ['invaders.remove(alien)', 'non', 'On ne réécrit pas invaders : on retire quelque chose de la liste.'],
+    ['lives_display = codesters.Text(str(lives), -175, -232, "red")', 'oui', 'On remplace l\'étiquette lives_display du jeu par un nouveau texte : c\'est un « = ».'],
+    ['player.set_x(player.get_x() + 20)', 'non', 'On lit player et on appelle une de ses fonctions : pas de « player = ».'],
+    ['if lives <= 0:', 'non', 'On lit seulement lives.'],
+    ['boss_is_alive = False', 'oui', 'C\'est un « = » sur une variable du jeu.'],
+    ['player_lasers.append(laser)', 'non', 'On range un tir dans la liste du jeu.'],
+    ['tick_count = tick_count + 1', 'oui', 'On écrit tick_count : c\'est un « = ».'],
+  ];
+  let last = -1;
+  PAGE.quiz = () => {
+    let k; do { k = Math.floor(Math.random() * QS.length); } while (k === last); last = k;
+    const [code, ans, why] = QS[k];
+    return { text: `Dans une fonction, on écrit <span class="mono">${esc(code)}</span>. Faut-il <span class="mono">global</span> ?`, ans, opts: ['oui', 'non'], why };
+  };
+
+  resetGame(); draw();
+})();
+(() => {
+  // ----- étapes -----
+  const steps = [...document.querySelectorAll('#steps .step')];
+  let cur = 0;
+  $('picks').innerHTML = steps.map((s, i) => `<button class="pick" type="button" data-i="${i}" aria-label="Étape ${s.querySelector('.num').textContent}">${s.querySelector('.num').textContent}</button>`).join('');
+  function showStep(i, anim = true) {
+    cur = Math.max(0, Math.min(steps.length - 1, i));
+    steps.forEach((s, k) => { s.hidden = k !== cur; s.classList.remove('enter'); });
+    if (anim && !REDUCE) { void steps[cur].offsetWidth; steps[cur].classList.add('enter'); }
+    $('picks').querySelectorAll('.pick').forEach((b, k) => { if (k === cur) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current'); });
+    $('prevStep').disabled = cur === 0; $('nextStep').disabled = cur === steps.length - 1;
+    PAGE.onStep(cur, steps.length);
+  }
+  $('picks').addEventListener('click', e => { const b = e.target.closest('.pick'); if (b) showStep(+b.dataset.i); });
+  $('prevStep').addEventListener('click', () => showStep(cur - 1));
+  $('nextStep').addEventListener('click', () => showStep(cur + 1));
+  document.addEventListener('keydown', e => {
+    if (e.target.closest('input, select, textarea')) return;
+    if (e.key === 'ArrowRight') showStep(cur + 1); if (e.key === 'ArrowLeft') showStep(cur - 1);
+  });
+
+  // ----- défi -----
+  let q = null, answered = false, score = 0, total = 0;
+  function nextQ() {
+    q = PAGE.quiz(); answered = false;
+    $('qtext').innerHTML = q.text;
+    $('qvisual').innerHTML = q.visual || '';
+    const opts = [...new Set(q.opts)].sort(() => Math.random() - .5);
+    $('opts').innerHTML = opts.map(v => `<button class="opt" type="button">${v}</button>`).join('');
+    $('qfb').textContent = '';
+  }
+  $('opts').addEventListener('click', e => {
+    const b = e.target.closest('.opt'); if (!b || answered) return;
+    answered = true; total++;
+    const ok = b.textContent === q.ans; if (ok) score++;
+    $('opts').querySelectorAll('.opt').forEach(o => { o.disabled = true; if (o.textContent === q.ans) o.classList.add('ok'); else if (o === b) o.classList.add('ko'); });
+    $('qfb').textContent = (ok ? 'Bien vu ! ' : 'Pas tout à fait. ') + q.why;
+    $('qfb').style.color = ok ? 'var(--green)' : 'var(--bad)';
+    $('qscore').textContent = `Score : ${score} / ${total}`;
+  });
+  $('qnext').addEventListener('click', nextQ);
+
+  // ----- hauteur : pas de défilement à droite -----
+  const deskMQ = window.matchMedia('(min-width: 901px)');
+  function fitHeight() {
+    const col = document.querySelector('.stage-col');
+    col.style.minHeight = '';
+    if (!deskMQ.matches) return;
+    const box = $('steps'); let max = 0;
+    steps.forEach((s, k) => { steps.forEach((o, j) => o.hidden = j !== k); max = Math.max(max, box.scrollHeight); });
+    steps.forEach((o, j) => o.hidden = j !== cur);
+    col.style.minHeight = Math.ceil(max + 12 + $('stepnav').offsetHeight) + 'px';
+  }
+  showStep(0, false); nextQ(); fitHeight();
+  window.addEventListener('resize', fitHeight);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitHeight);
+})();
+</script>
